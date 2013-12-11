@@ -48,8 +48,8 @@ _USAGE_: TODO
 ## References
 
 * http://www.html5rocks.com/en/tutorials/file/xhr2/
-* https://developer.mozilla.org/en-US/docs/Web/API/DataView?redirectlocale=en-US&redirectslug=Web%2FJavaScript%2FTyped%20arrays%2FDataView
-* https://developer.mozilla.org/en-US/docs/Web/JavaScript/Typed%20arrays?redirectlocale=en-US&redirectslug=JavaScript%2FTyped%20arrays
+* https://developer.mozilla.org/en-US/docs/Web/API/DataView?redirectlocale=en-US&redirectslug=Web%2FJavaScript%2FTyped arrays%2FDataView
+* https://developer.mozilla.org/en-US/docs/Web/JavaScript/Typed arrays?redirectlocale=en-US&redirectslug=JavaScript%2FTyped%20arrays
 * http://stackoverflow.com/questions/327685/is-there-a-way-to-read-binary-data-in-javascript
 * https://github.com/tbuser/thingiview.js
 * https://github.com/MarcoPolo/servant
