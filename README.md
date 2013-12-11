@@ -10,3 +10,4 @@ References
 * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Typed_arrays?redirectlocale=en-US&redirectslug=JavaScript%2FTyped_arrays
 * http://stackoverflow.com/questions/327685/is-there-a-way-to-read-binary-data-in-javascript
 * https://github.com/tbuser/thingiview.js
+* https://github.com/MarcoPolo/servant
