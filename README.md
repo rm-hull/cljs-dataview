@@ -41,6 +41,7 @@ _USAGE_: TODO
 
 ## TODO
 
+* Integrate CORS handling with http://www.corsproxy.com/
 
 ## Known Bugs
 
