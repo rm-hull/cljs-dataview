@@ -43,3 +43,74 @@
         (if (utf? (keyword encoding))
           (-> s js/escape js/decodeURIComponent)
           s)))))
+
+(defprotocol IReader
+  (read-string [this byte-length])
+  (read-string [this byte-length encoding])
+  (read-uint8 [this])
+  (read-uint16-le [this])
+  (read-uint32-le [this])
+  (read-float32-le [this]))
+
+(defprotocol ISeek
+  (position [this])
+  (advance! [this delta])
+  (seek! [this new-offset])
+  (rewind! [this]))
+
+(defn create-seeker [initial-offset]
+  (let [index (atom initial-offset)]
+    (reify
+      ISeek
+      (position [this]
+        (deref index))
+
+      (advance! [this delta]
+        (- (swap! index + delta) delta))
+
+      (seek! [this new-offset]
+        (reset! index new-offset))
+
+      (rewind! [this]
+        (seek! this 0)))))
+
+(defn create-reader [data-view]
+  (let [seeker (create-seeker 0)]
+    (reify
+      IReader
+
+      (read-string [this byte-length]
+        (read-string this byte-length :ascii))
+
+      (read-string [this byte-length encoding]
+        (let [offset (advance! this byte-length)]
+          (get-string data-view offset byte-length encoding)))
+
+      (read-uint8 [this]
+        (let [offset (advance! this 1)]
+          (get-uint8 data-view offset)))
+
+      (read-uint16-le [this]
+        (let [offset (advance! this 2)]
+          (get-uint16-le data-view offset)))
+
+      (read-uint32-le [this]
+        (let [offset (advance! this 4)]
+          (get-uint32-le data-view offset)))
+
+      (read-float32-le [this]
+        (let [offset (advance! this 4)]
+          (get-float32-le data-view offset)))
+
+      ISeek
+      (position [this]
+        (position seeker))
+
+      (advance! [this delta]
+        (advance! seeker delta))
+
+      (seek! [this new-offset]
+        (seek! seeker new-offset))
+
+      (rewind! [this]
+        (rewind! seeker)))))

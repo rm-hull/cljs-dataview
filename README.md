@@ -37,7 +37,96 @@ For maven-based projects, add the following to your `pom.xml`:
 
 ## Basic Usage
 
-_USAGE_: TODO
+### Example: Reading binary STL files
+
+[Binary STL](https://en.wikipedia.org/wiki/STL_(file_format)#Binary_STL) files
+can be read in and processed with the following code sample (see [example.clj]() 
+for fully working example).
+
+```clojure
+(ns cljs.dataview.example
+  (:require [cljs.dataview.loader :refer [fetch-blob]]
+            [cljs.dataview.ops :refer [create-reader read-string read-float32-le
+                                       read-uint16-le read-uint32-le]])
+  (:require-macros [cljs.core.async.macros :refer [go]]))
+
+(def local-url "http://localhost/~rhu/test/torus.stl")
+```
+
+The ```torus.stl``` contains polygons for the classic/ubiquitous 3D torus as per:
+
+![Torus](https://raw.github.com/rm-hull/wireframes/master/doc/gallery/shaded/torus.png)
+
+In order to read the binary data, we must first define some decoder specs, so to 
+create a 3D point, a ```point-spec``` is an ordered map of _x_, _y_ and _z_ floating-point
+components:
+
+```clojure
+(defn point-spec [reader]
+  (array-map
+    :x (read-float32-le reader)
+    :y (read-float32-le reader)
+    :z (read-float32-le reader)))
+```
+Similarly, a triange is composed of a [surface normal](https://en.wikipedia.org/wiki/Surface_normal),
+followed by 3 vertex co-ordinates, and some attributes:
+
+```clojure
+(defn triangle-spec [reader]
+  (array-map
+    :normal (point-spec reader)
+    :points (repeatedly 3 #(point-spec reader))
+    :attributes (read-uint16-le reader)))
+```
+Finally, the overall STL spec header consists of 80 padded characters, 
+followed by a triangle count: notice how this determines how many times the
+```triangle-spec``` is subsequently invoked in the body:
+
+```clojure
+(defn stl-spec [reader]
+  (array-map
+    :header (read-string reader 80 :ascii)
+    :triangles (repeatedly
+                 (read-uint32-le reader) ; <== triangle-count
+                 #(triangle-spec reader))))
+```
+So in order to fetch the binary data ```fetch-blob``` returns a channel from which
+a javascript [DataView](https://developer.mozilla.org/en-US/docs/Web/API/DataView?redirectlocale=en-US&redirectslug=Web%2FJavaScript%2FTyped_arrays%2FDataView)
+is produced. In order to _sort-of_ treat the DataView object as an input stream, 
+it is wrapped in a reader, which is then passed to the ```stl-spec```: hence the binary
+data is diced into a persistent map structure.
+
+(go
+  (->
+    (<! (fetch-blob local-url))
+    (create-reader)
+    (stl-spec)
+    (println)))
+
+The resulting output (curtailed and slightly formatted):
+
+```clojure
+{:header Torus, created with https://github/rm-hull/wireframes [October 16 2013]         , 
+ :triangles (
+   {:normal {:x -0.9972646832466125, :y -0.05226442590355873, :z 0.05226442590355873}, 
+    :points ({:x 2.313824024293138e-41, :y 0, :z -6.626643678231403e-16} 
+             {:x 1.681875909241491e-27, :y 2.2182554690261854e-41, :z 1.453125} 
+             {:x 1.6818757166484964e-27, :y -126587.671875, :z 6.845763387766029e-41}), 
+    :attributes 0} 
+   {:normal {:x -0.9972646832466125, :y -0.05226442590355873, :z 0.05226442590355873}, 
+    :points ({:x 2.313824024293138e-41, :y 0, :z 1.453125} 
+             {:x 1.6818757166484964e-27, :y -126587.671875, :z -6.559165828898756e-24} 
+             {:x 2.313543764600273e-41, :y 1.678696006310313e-27, :z 6.845903517612461e-41}), 
+    :attributes 0} 
+   {:normal {:x -0.9863678216934204, :y -0.1562253087759018, :z 0.05169334635138512}, 
+    :points ({:x 1.681875909241491e-27, :y 2.2182554690261854e-41, :z -2.5642598989143858e-23} 
+             {:x -4.846373999329217e+23, :y 2.235911829676678e-41, :z 4.377216100692749e-7} 
+             {:x -4.846373639041247e+23, :y -1.5134567764592248e+24, :z 6.845623257919596e-41}),
+    :attributes 42559} 
+
+...
+)}
+```
 
 ## TODO
 
