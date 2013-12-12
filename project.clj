@@ -16,6 +16,7 @@
         :source-paths ["src"]
         :compiler {
           :optimizations :none
+          :pretty-print true
           :output-to "cljs-dataview.js"
           :output-dir "target"
           :source-map true}}]})
