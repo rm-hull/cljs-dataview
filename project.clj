@@ -6,7 +6,7 @@
             :url "http://opensource.org/licenses/MIT"}
   :min-lein-version "2.3.2"
   :global-vars {*warn-on-reflection* true}
-  :plugins [[lein-cljsbuild "0.3.4"]]
+  :plugins [[lein-cljsbuild "1.0.0"]]
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-2080"]
                  [org.clojure/core.async "0.1.267.0-0d7780-alpha"]]
@@ -15,8 +15,7 @@
       :id "cljs-dataview"
         :source-paths ["src"]
         :compiler {
-          :optimizations :whitespace
-          :static-fns true
-          :pretty-print false
-          :output-to "target/cljs-dataview.js"
-          :source-map "target/cljs-dataview.js.map"}}]})
+          :optimizations :none
+          :output-to "cljs-dataview.js"
+          :output-dir "target"
+          :source-map true}}]})
