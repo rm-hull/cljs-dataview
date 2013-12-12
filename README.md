@@ -39,8 +39,8 @@ For maven-based projects, add the following to your `pom.xml`:
 
 ### Example: Reading binary STL files
 
-[Binary STL](https://en.wikipedia.org/wiki/STL_(file_format)#Binary_STL) files
-can be read in and processed with the following code sample (see [example.clj]() 
+[Binary STL](https://en.wikipedia.org/wiki/STL_\(file_format\)#Binary_STL) files
+can be read in and processed with the following code sample (see [example.cljs](https://github.com/rm-hull/cljs-dataview/blob/master/src/cljs/dataview/example.cljs) 
 for fully working example).
 
 ```clojure
@@ -96,13 +96,14 @@ is produced. In order to _sort-of_ treat the DataView object as an input stream,
 it is wrapped in a reader, which is then passed to the ```stl-spec```: hence the binary
 data is diced into a persistent map structure.
 
+```clojure
 (go
   (->
     (<! (fetch-blob local-url))
     (create-reader)
     (stl-spec)
     (println)))
-
+```
 The resulting output (curtailed and slightly formatted):
 
 ```clojure
