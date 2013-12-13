@@ -105,7 +105,7 @@ followed by a triangle count: notice how this determines how many times the
 So in order to fetch the binary data, ```fetch-blob``` below returns a 
 _core.async_ channel, from which a javascript DataView is produced. In order 
 to then _sort-of_ treat the DataView object as an input stream, it is wrapped in a 
-reader (by virtue of the ```create-reader`` function), which is then passed on
+reader (by virtue of the ```create-reader``` function), which is then passed on
 to the ```stl-spec```: hence the binary data is progressively diced 
 into a persistent map structure.
 
