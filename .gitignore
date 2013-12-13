@@ -7,3 +7,4 @@ pom.xml
 .lein-repl-history
 /.nrepl-port
 /cljs-dataview.js
+/.lein-failures
