@@ -41,7 +41,7 @@ For maven-based projects, add the following to your `pom.xml`:
 
 [Binary STL](https://en.wikipedia.org/wiki/STL_\(file_format\)#Binary_STL) files
 can be read in and processed with the following code sample (see [example.cljs](https://github.com/rm-hull/cljs-dataview/blob/master/src/cljs/dataview/example.cljs) 
-for fully working example).
+for fully working example). Starting with some necessary pre-amble:
 
 ```clojure
 (ns cljs.dataview.example
@@ -57,9 +57,9 @@ The ```torus.stl``` contains polygons for the classic/ubiquitous 3D torus as per
 
 ![Torus](https://raw.github.com/rm-hull/wireframes/master/doc/gallery/shaded/torus.png)
 
-In order to read the binary data, we must first define some decoder specs, so to 
-create a 3D point, a ```point-spec``` is an ordered map of _x_, _y_ and _z_ floating-point
-components:
+In order to read the binary STL data, we must first define some decoders, so to 
+firstly create a 3D point, a ```point-spec``` is just an ordered map of _x_, _y_ 
+and _z_ floating-point components:
 
 ```clojure
 (defn point-spec [reader]
@@ -68,8 +68,13 @@ components:
     :y (read-float32-le reader)
     :z (read-float32-le reader)))
 ```
+A _reader_ is a stateful implementation of an ```IReader``` protocol -- this 
+has methods that traverse a DataView sequentially, and allowing random access
+seek/rewind/tell similar to that with Unix file descriptors.
+
 Similarly, a triange is composed of a [surface normal](https://en.wikipedia.org/wiki/Surface_normal),
-followed by 3 vertex co-ordinates, and some attributes:
+followed by 3 vertex co-ordinates -- the normal and the vertexes are constructed
+out of repeated application of the ```point-spec``` above, and some attributes:
 
 ```clojure
 (defn triangle-spec [reader]
@@ -90,11 +95,11 @@ followed by a triangle count: notice how this determines how many times the
                  (read-uint32-le reader) ; <== triangle-count
                  #(triangle-spec reader))))
 ```
-So in order to fetch the binary data ```fetch-blob``` returns a channel from which
+So in order to fetch the binary data, ```fetch-blob``` returns a channel, from which
 a javascript [DataView](https://developer.mozilla.org/en-US/docs/Web/API/DataView?redirectlocale=en-US&redirectslug=Web%2FJavaScript%2FTyped_arrays%2FDataView)
 is produced. In order to _sort-of_ treat the DataView object as an input stream, 
-it is wrapped in a reader, which is then passed to the ```stl-spec```: hence the binary
-data is diced into a persistent map structure.
+it is wrapped in a reader, which is then passed on to the ```stl-spec```: hence 
+the binary data is progressively diced into a persistent map structure.
 
 ```clojure
 (go
@@ -107,7 +112,7 @@ data is diced into a persistent map structure.
 The resulting output (curtailed and slightly formatted):
 
 ```clojure
-{:header Torus, created with https://github/rm-hull/wireframes [October 16 2013]         , 
+{:header "Torus, created with https://github/rm-hull/wireframes [October 16 2013]         ", 
  :triangles (
    {:normal {:x -0.9972646832466125, :y -0.05226442590355873, :z 0.05226442590355873}, 
     :points ({:x 2.313824024293138e-41, :y 0, :z -6.626643678231403e-16} 
