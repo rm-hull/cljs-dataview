@@ -14,7 +14,8 @@
                  [org.clojure/core.async "0.1.267.0-0d7780-alpha"]
                  [prismatic/cljs-test "0.0.6"]]
   :cljsbuild {
-    :test-commands {"unit" ["phantomjs" "target/unit-test.js"]}
+    :test-commands {"slimerjs"  ["slimerjs"  "target/unit-test.js"]
+                    "phantomjs" ["phantomjs" "target/unit-test.js"]}
     :builds {
       :dev {:source-paths ["src" "example"]
             :compiler {:output-to "target/example.js"
