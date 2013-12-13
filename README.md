@@ -41,7 +41,7 @@ For maven-based projects, add the following to your `pom.xml`:
 
 [Binary STL](https://en.wikipedia.org/wiki/STL_\(file_format\)#Binary_STL) files
 can be read in and processed with the following code sample (see 
-[examples/binary_stl.cljs](https://github.com/rm-hull/cljs-dataview/blob/master/examples/binary_stl.cljs)
+[example/binary_stl.cljs](https://github.com/rm-hull/cljs-dataview/blob/master/example/binary_stl.cljs)
 for fully working example). Starting with some necessary pre-amble:
 
 ```clojure
