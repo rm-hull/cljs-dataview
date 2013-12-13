@@ -52,17 +52,17 @@
   (read-uint32-le [this])
   (read-float32-le [this]))
 
-(defprotocol ISeek
-  (position [this])
-  (advance! [this delta])
+(defprotocol IRandomAccess
+  (tell [this])
+  (advance! [this delta])   ; cf. get-and-add
   (seek! [this new-offset])
   (rewind! [this]))
 
-(defn create-seeker [initial-offset]
+(defn- create-seeker [initial-offset]
   (let [index (atom initial-offset)]
     (reify
-      ISeek
-      (position [this]
+      IRandomAccess
+      (tell [this]
         (deref index))
 
       (advance! [this delta]
@@ -102,9 +102,9 @@
         (let [offset (advance! this 4)]
           (get-float32-le data-view offset)))
 
-      ISeek
-      (position [this]
-        (position seeker))
+      IRandomAccess
+      (tell [this]
+        (tell seeker))
 
       (advance! [this delta]
         (advance! seeker delta))
