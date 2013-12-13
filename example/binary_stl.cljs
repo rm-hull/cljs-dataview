@@ -1,4 +1,4 @@
-(ns cljs.dataview.example
+(ns binary-stl
   (:require [cljs.dataview.loader :refer [fetch-blob]]
             [cljs.dataview.ops :refer [create-reader read-string read-float32-le
                                        read-uint16-le read-uint32-le]])

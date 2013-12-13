@@ -40,11 +40,12 @@ For maven-based projects, add the following to your `pom.xml`:
 ### Example: Reading binary STL files
 
 [Binary STL](https://en.wikipedia.org/wiki/STL_\(file_format\)#Binary_STL) files
-can be read in and processed with the following code sample (see [example.cljs](https://github.com/rm-hull/cljs-dataview/blob/master/src/cljs/dataview/example.cljs) 
+can be read in and processed with the following code sample (see 
+[examples/binary_stl.cljs](https://github.com/rm-hull/cljs-dataview/blob/master/examples/binary_stl.cljs)
 for fully working example). Starting with some necessary pre-amble:
 
 ```clojure
-(ns cljs.dataview.example
+(ns binary-stl
   (:require [cljs.dataview.loader :refer [fetch-blob]]
             [cljs.dataview.ops :refer [create-reader read-string read-float32-le
                                        read-uint16-le read-uint32-le]])
