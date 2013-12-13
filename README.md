@@ -57,7 +57,7 @@ The ```torus.stl``` contains polygons for the classic/ubiquitous 3D torus as per
 
 ![Torus](https://raw.github.com/rm-hull/wireframes/master/doc/gallery/shaded/torus.png)
 
-In order to read the binary STL data, we must first define some decoders, so
+In order to read the binary STL data, we must first define some decoders; so
 to create a 3D point, a ```point-spec``` generates an ordered map of _x_, _y_
 and _z_ floating-point components from a reader:
 
@@ -102,11 +102,12 @@ followed by a triangle count: notice how this determines how many times the
                  (read-uint32-le reader) ; <== triangle-count
                  #(triangle-spec reader))))
 ```
-So in order to fetch the binary data, ```fetch-blob``` returns a channel, from which
-a javascript [DataView](https://developer.mozilla.org/en-US/docs/Web/API/DataView?redirectlocale=en-US&redirectslug=Web%2FJavaScript%2FTyped_arrays%2FDataView)
-is produced. In order to _sort-of_ treat the DataView object as an input stream, 
-it is wrapped in a reader, which is then passed on to the ```stl-spec```: hence 
-the binary data is progressively diced into a persistent map structure.
+So in order to fetch the binary data, ```fetch-blob``` below returns a 
+_core.async_ channel, from which a javascript DataView is produced. In order 
+to then _sort-of_ treat the DataView object as an input stream, it is wrapped in a 
+reader (by virtue of the ```create-reader`` function), which is then passed on
+to the ```stl-spec```: hence the binary data is progressively diced 
+into a persistent map structure.
 
 ```clojure
 (go
