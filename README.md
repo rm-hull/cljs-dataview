@@ -69,12 +69,14 @@ and _z_ floating-point components:
     :z (read-float32-le reader)))
 ```
 A _reader_ is a stateful implementation of an ```IReader``` protocol -- this 
-has methods that traverse a DataView sequentially, and allowing random access
-seek/rewind/tell similar to that with Unix file descriptors.
+has methods that traverse a [DataView](https://developer.mozilla.org/en-US/docs/Web/API/DataView?redirectlocale=en-US&redirectslug=Web%2FJavaScript%2FTyped_arrays%2FDataView)
+sequentially as bytes, 16-bit & 32-bit integers, floating-point numbers and 
+fixed-width strings, as well as allowing random access _seek_/_rewind_/_tell_ 
+operations similar to that with Unix file descriptors.
 
-Similarly, a triange is composed of a [surface normal](https://en.wikipedia.org/wiki/Surface_normal),
-followed by 3 vertex co-ordinates -- the normal and the vertexes are constructed
-out of repeated application of the ```point-spec``` above, and some attributes:
+Secondly, a triange is composed of a [surface normal](https://en.wikipedia.org/wiki/Surface_normal),
+followed by 3 vertex co-ordinates and some attribute -- the normal and the 
+vertexes are constructed out of repeated application of the ```point-spec``` above.
 
 ```clojure
 (defn triangle-spec [reader]
