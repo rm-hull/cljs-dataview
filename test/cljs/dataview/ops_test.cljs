@@ -27,4 +27,4 @@
 
     (is=
       data
-      (repeatedly (count data) #(tee println (op/read-float32-le reader))))))
+      (repeatedly (count data) #(op/read-float32-le reader)))))
