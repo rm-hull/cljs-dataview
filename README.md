@@ -12,9 +12,21 @@ You will need [Leiningen](https://github.com/technomancy/leiningen) 2.3.2 or abo
 
 To build and install the library locally, run:
 
+    $ lein clean 
     $ lein cljsbuild once
-    $ lein cljsbuild test
     $ lein install
+
+### Testing
+
+To run the tests in a browser, ensure the generated javascript files are up-to-date,
+and open ```resources/run-tests.html``` in a browser - this executes the tests and
+the test results are displayed on the page.
+
+Alternatively, to run using PhantomJS, execute:
+
+    $ lein cljsbuild phantomjs
+
+This will only show a tally of failed tests.
 
 ### Including in your project
 
