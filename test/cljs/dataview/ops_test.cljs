@@ -8,6 +8,13 @@
     (js/ArrayBuffer. size)
     (js/DataView.)))
 
+
+(defn set-binary-data! [data-view offset data]
+  (let [offsets (iterate inc offset)
+        pairs (partition 2 (interleave offsets data))]
+    (doseq [[i n] pairs]
+      (. data-view (setUint8 i n)))))
+
 (defn set-float-data! [data-view offset data]
   (let [offsets (iterate (partial + 4) offset)
         pairs (partition 2 (interleave offsets data))]
@@ -18,7 +25,7 @@
   (tee-fn x)
   x)
 
-(deftest test-reader-decode-two-floats-le
+(deftest test-reader-decode-floats-le
   (let [dv (create-dataview 16)
         reader (op/create-reader dv)
         data [4.0 17.5 16.5 43.0]]
@@ -27,4 +34,48 @@
 
     (is=
       data
-      (repeatedly (count data) #(op/read-float32-le reader)))))
+      (repeatedly (count data) #(op/read-float32-le reader))
+      "Four 32-bit floats")))
+
+(deftest triangle-binary-data
+  (let [data (list 0x20 0x1c 0x00 0x00
+                    0xbd 0x4c 0x7f 0xbf
+                    0x39 0x13 0x56 0xbd
+                    0x39 0x13 0x56 0x3d
+                    0x00 0x00 0x80 0x40
+                    0x00 0x00 0x00 0x00
+                    0x00 0x00 0x00 0x00
+                    0x3f 0xa6 0x7f 0x40
+                    0x05 0x13 0xd6 0x3d
+                    0x00 0x00 0x00 0x00
+                    0xba 0x3f 0x7e 0x40
+                    0x05 0x13 0xd6 0x3d
+                    0xf7 0xc7 0xd5 0xbe
+                    0x00 0x00)
+        dv (create-dataview 256)
+        reader (op/create-reader dv)]
+
+    (set-binary-data! dv 0 data)
+
+    (is= (op/read-uint32-le reader) 7200 "Num triangles")
+
+    (is= (op/read-float32-le reader) -0.9972646832466125 "Normal X")
+    (is= (op/read-float32-le reader) -0.05226442590355873 "Normal Y")
+    (is= (op/read-float32-le reader)  0.05226442590355873 "Normal Z")
+
+    (is= (op/read-float32-le reader)  4.0 "Point 1 X")
+    (is= (op/read-float32-le reader)  0.0 "Point 1 Y")
+    (is= (op/read-float32-le reader)  0.0 "Point 1 Z")
+
+    (is= (op/read-float32-le reader)  3.9945218563079834 "Point 2 X")
+    (is= (op/read-float32-le reader)  0.10452846437692642 "Point 2 Y")
+    (is= (op/read-float32-le reader)  0.0 "Point 2 Z")
+
+    (is= (op/read-float32-le reader)  3.972639560699463 "Point 3 X")
+    (is= (op/read-float32-le reader)  0.10452846437692642 "Point 3 Y")
+    (is= (op/read-float32-le reader) -0.4175412356853485 "Point 3 Z")
+
+    (is= (op/read-uint16-le reader)  0.0 "Attributes")))
+
+
+
