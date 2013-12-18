@@ -37,6 +37,7 @@
       (repeatedly (count data) #(op/read-float32-le reader))
       "Four 32-bit floats")))
 
+(comment ; causes PhantomJS to segfault
 (deftest triangle-binary-data
   (let [data (list 0x20 0x1c 0x00 0x00
                     0xbd 0x4c 0x7f 0xbf
@@ -75,7 +76,7 @@
     (is= (op/read-float32-le reader)  0.10452846437692642 "Point 3 Y")
     (is= (op/read-float32-le reader) -0.4175412356853485 "Point 3 Z")
 
-    (is= (op/read-uint16-le reader)  0.0 "Attributes")))
+    (is= (op/read-uint16-le reader)  0.0 "Attributes"))))
 
 
 
