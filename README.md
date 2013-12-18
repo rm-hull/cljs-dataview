@@ -164,7 +164,8 @@ The resulting output (curtailed and slightly formatted):
 
 ## Known Bugs
 
-* -Fix bug in example where repeatedly was not being forced-
+* ~~Fix bug in binary STL example where repeatedly was not being forced.~~
+* Triangle test causes PhantomJS to segfault.
 
 ## References
 
