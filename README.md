@@ -24,7 +24,7 @@ the test results are displayed on the page.
 
 Alternatively, to run using PhantomJS, execute:
 
-    $ lein cljsbuild phantomjs
+    $ lein cljsbuild test
 
 This will only show a tally of failed tests.
 
@@ -94,13 +94,15 @@ descriptors) are also available.
 Secondly, a triangle is composed of a [surface normal](https://en.wikipedia.org/wiki/Surface_normal),
 followed by 3 vertex co-ordinates and some attributes in the form of a 16-bit
 word -- the normal and the vertexes are constructed out of repeated application
-of the ```point-spec``` above.
+of the ```point-spec``` above. Note that since the ```point-spec``` has side-effects
+it is important to call _doall_ for force evaluation, otherwise _repeatedly_ will
+act lazily.
 
 ```clojure
 (defn triangle-spec [reader]
   (array-map
     :normal (point-spec reader)
-    :points (repeatedly 3 #(point-spec reader))
+    :points (doall (repeatedly 3 #(point-spec reader)))
     :attributes (read-uint16-le reader)))
 ```
 Finally, the overall STL spec header consists of 80 padded characters, 
@@ -111,9 +113,9 @@ followed by a triangle count: notice how this determines how many times the
 (defn stl-spec [reader]
   (array-map
     :header (read-string reader 80 :ascii)
-    :triangles (repeatedly
+    :triangles (doall (repeatedly
                  (read-uint32-le reader) ; <== triangle-count
-                 #(triangle-spec reader))))
+                 #(triangle-spec reader)))))
 ```
 So in order to fetch the binary data, ```fetch-blob``` below returns a 
 _core.async_ channel, from which a javascript DataView is produced. In order 
@@ -136,20 +138,20 @@ The resulting output (curtailed and slightly formatted):
 {:header "Torus, created with https://github/rm-hull/wireframes [October 16 2013]         ", 
  :triangles (
    {:normal {:x -0.9972646832466125, :y -0.05226442590355873, :z 0.05226442590355873}, 
-    :points ({:x 2.313824024293138e-41, :y 0, :z -6.626643678231403e-16} 
-             {:x 1.681875909241491e-27, :y 2.2182554690261854e-41, :z 1.453125} 
-             {:x 1.6818757166484964e-27, :y -126587.671875, :z 6.845763387766029e-41}), 
+    :points ({:x 4, :y 0, :z 0} 
+             {:x 3.9945218563079834, :y 0.10452846437692642, :z 0} 
+             {:x 3.972639560699463, :y 0.10452846437692642, :z -0.4175412356853485}), 
     :attributes 0} 
-   {:normal {:x -0.9972646832466125, :y -0.05226442590355873, :z 0.05226442590355873}, 
-    :points ({:x 2.313824024293138e-41, :y 0, :z 1.453125} 
-             {:x 1.6818757166484964e-27, :y -126587.671875, :z -6.559165828898756e-24} 
-             {:x 2.313543764600273e-41, :y 1.678696006310313e-27, :z 6.845903517612461e-41}), 
+   {:normal {:x -0.9972646832466125, :y -0.05226442590355873, :z 0.05226442590355873},
+    :points ({:x 4, :y 0, :z 0} 
+             {:x 3.972639560699463, :y 0.10452846437692642, :z -0.4175412356853485} 
+             {:x 3.9780876636505127, :y 0, :z -0.4181138575077057}), 
     :attributes 0} 
    {:normal {:x -0.9863678216934204, :y -0.1562253087759018, :z 0.05169334635138512}, 
-    :points ({:x 1.681875909241491e-27, :y 2.2182554690261854e-41, :z -2.5642598989143858e-23} 
-             {:x -4.846373999329217e+23, :y 2.235911829676678e-41, :z 4.377216100692749e-7} 
-             {:x -4.846373639041247e+23, :y -1.5134567764592248e+24, :z 6.845623257919596e-41}),
-    :attributes 42559} 
+    :points ({:x 3.9945218563079834, :y 0.10452846437692642, :z 0} 
+             {:x 3.978147506713867, :y 0.2079116851091385, :z 0} 
+             {:x 3.956354856491089, :y 0.2079116851091385, :z -0.4158296585083008}), 
+    :attributes 0} 
 
 ...
 )}
@@ -158,9 +160,11 @@ The resulting output (curtailed and slightly formatted):
 ## TODO
 
 * Integrate CORS handling with http://www.corsproxy.com/
+* Test framework, travis integration & unit tests
 
 ## Known Bugs
 
+* -Fix bug in example where repeatedly was not being forced-
 
 ## References
 

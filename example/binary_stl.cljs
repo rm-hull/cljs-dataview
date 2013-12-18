@@ -25,19 +25,20 @@
 (defn triangle-spec [reader]
   (array-map
     :normal (point-spec reader)
-    :points (repeatedly 3 #(point-spec reader))
+    :points (doall (repeatedly 3 #(point-spec reader)))
     :attributes (read-uint16-le reader)))
 
 (defn stl-spec [reader]
   (array-map
     :header (read-string reader 80 :ascii)
-    :triangles (repeatedly
-                 (read-uint32-le reader) ; <== triangle-count
-                 #(triangle-spec reader))))
+    :triangles (doall (repeatedly
+                 (read-uint32-le reader)
+                 #(triangle-spec reader)))))
 
 (go
   (->
     (<! (fetch-blob local-url))
     (create-reader)
     (stl-spec)
+    (time)
     (println)))
