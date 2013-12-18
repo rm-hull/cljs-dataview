@@ -159,6 +159,10 @@ The resulting output (curtailed and slightly formatted):
 
 ## TODO
 
+* Implement ```read-string``` with a delimiter
+* Implement IWriter protocol
+* Proper EOD handling/testing
+* [Gloss](https://github.com/ztellman/gloss)-style codecs
 * Integrate CORS handling with http://www.corsproxy.com/
 * Test framework, travis integration & unit tests
 
