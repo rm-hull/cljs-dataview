@@ -35,18 +35,24 @@
    note that only UTF-8 is currently supported), extracts a string from the
    underlying byte buffer."
   (let [utf? #{:utf8 :utf-8 :UTF8 :UTF-8}]
-    (fn [data-view byte-offset byte-length & [encoding]]
-      (let [s (->>
-                (range byte-offset (+ byte-offset byte-length))
+    (fn [data-view byte-offset & {:keys [delimiters length encoding] :as opts}]
+      (when (and delimiters length)
+        (throw (js/Error. "Cannot support :length and :delimiters at the same time")))
+      (let [take-fn (fn [cs] (if length
+                               (take length cs)
+                               (take-while #(not (delimiters %)) cs)))
+            s (->>
+                (iterate inc byte-offset)
                 (map (comp char (partial get-uint8 data-view)))
+                (take-fn)
                 (apply str))]
         (if (utf? (keyword encoding))
           (-> s js/escape js/decodeURIComponent)
           s)))))
 
 (defprotocol IReader
-  (read-string [this byte-length])
-  (read-string [this byte-length encoding])
+  (read-delimited-string [this delimiters encoding])
+  (read-fixed-string [this length encoding])
   (read-uint8 [this])
   (read-uint16-le [this])
   (read-uint32-le [this])
@@ -79,12 +85,15 @@
     (reify
       IReader
 
-      (read-string [this byte-length]
-        (read-string this byte-length :ascii))
+      (read-delimited-string [this delimiters encoding]
+        (let [offset (tell seeker)
+              data   (get-string data-view offset :delimiters delimiters :encoding encoding)]
+          (advance! seeker (inc (count data))) ; cater for single-character delimiters only
+          data))
 
-      (read-string [this byte-length encoding]
-        (let [offset (advance! this byte-length)]
-          (get-string data-view offset byte-length encoding)))
+      (read-fixed-string [this length encoding]
+        (let [offset (advance! seeker length)]
+          (get-string data-view offset :length length :encoding encoding)))
 
       (read-uint8 [this]
         (let [offset (advance! this 1)]

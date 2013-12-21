@@ -1,6 +1,6 @@
 (ns binary-stl
   (:require [cljs.dataview.loader :refer [fetch-blob]]
-            [cljs.dataview.ops :refer [create-reader read-string read-float32-le
+            [cljs.dataview.ops :refer [create-reader read-fixed-string read-float32-le
                                        read-uint16-le read-uint32-le]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
@@ -30,7 +30,7 @@
 
 (defn stl-spec [reader]
   (array-map
-    :header (read-string reader 80 :ascii)
+    :header (read-fixed-string reader 80 :ascii)
     :triangles (doall (repeatedly
                  (read-uint32-le reader)
                  #(triangle-spec reader)))))

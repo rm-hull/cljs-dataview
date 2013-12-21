@@ -13,7 +13,7 @@
   (let [offsets (iterate inc offset)
         pairs (partition 2 (interleave offsets data))]
     (doseq [[i n] pairs]
-      (. data-view (setUint8 i n)))))
+      (.setUint8 data-view i (if (string? n) (.charCodeAt n 0) n)))))
 
 (defn set-float-data! [data-view offset data]
   (let [offsets (iterate (partial + 4) offset)
@@ -36,6 +36,21 @@
       data
       (repeatedly (count data) #(op/read-float32-le reader))
       "Four 32-bit floats")))
+
+(deftest reading-strings
+  (let [dv (create-dataview 128)
+        reader (op/create-reader dv)
+        data (str
+               "Is this all there was?\n"
+               "What was all the fuss?\n"
+               "Why did I bother?\n")]
+
+    (set-binary-data! dv 0 (seq data))
+
+    (is= (op/read-fixed-string reader 10 :ascii) "Is this al" "Single fixed string")
+    (is= (op/read-fixed-string reader 13 :ascii) "l there was?\n" "Next single fixed string")
+    (is= (op/read-delimited-string reader #{"\n"} :ascii) "What was all the fuss?" "Following single delimited string")
+    (is= (op/read-delimited-string reader #{"\n"} :ascii) "Why did I bother?" "Next single delimited string")))
 
 (comment ; causes PhantomJS to segfault
 (deftest triangle-binary-data
@@ -76,7 +91,9 @@
     (is= (op/read-float32-le reader)  0.10452846437692642 "Point 3 Y")
     (is= (op/read-float32-le reader) -0.4175412356853485 "Point 3 Z")
 
-    (is= (op/read-uint16-le reader)  0.0 "Attributes"))))
+    (is= (op/read-uint16-le reader)  0.0 "Attributes")))
+
+)
 
 
 
