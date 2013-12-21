@@ -6,7 +6,7 @@
   :license {:name "The MIT License (MIT)"
             :url "http://opensource.org/licenses/MIT"}
   :scm {:url "git@github.com:rm-hull/cljs-dataview"}
-  :min-lein-version "2.3.2"
+  :min-lein-version "2.3.4"
   :global-vars {*warn-on-reflection* true}
   :plugins [[lein-cljsbuild "1.0.0"]]
   :dependencies [[org.clojure/clojure "1.5.1"]

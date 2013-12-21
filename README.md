@@ -6,7 +6,7 @@ _PREAMBLE_: TODO
 
 ### Pre-requisites
 
-You will need [Leiningen](https://github.com/technomancy/leiningen) 2.3.2 or above installed.
+You will need [Leiningen](https://github.com/technomancy/leiningen) 2.3.4 or above installed.
 
 ### Building
 
