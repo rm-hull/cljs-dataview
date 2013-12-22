@@ -25,50 +25,63 @@
   (tee-fn x)
   x)
 
-(deftest test-reader-decode-floats-le
-  (let [dv (create-dataview 16)
+(deftest reading-floats
+  (let [n 16
+        dv (create-dataview n)
         reader (op/create-reader dv)
         data [4.0 17.5 16.5 43.0]]
 
     (set-float-data! dv 0 data)
 
-    (is=
-      data
-      (repeatedly (count data) #(op/read-float32-le reader))
-      "Four 32-bit floats")))
+    (is= (op/byte-length dv) n "Byte-length check")
+    (is= (op/can-read? dv 0 4) true "Can-read? first 4 bytes")
+    (is= (op/can-read? dv 4 4) true "Can-read? 4 bytes, offset 4")
+    (is= (op/can-read? dv 8 4) true "Can-read? 4 bytes, offset 8")
+    (is= (op/can-read? dv 12 4) true "Can-read? 4 bytes, offset 12")
+    (is= (op/can-read? dv 16 4) false "Can-read? 4 bytes, offset 16")
+    (is= (op/tell reader) 0 "Reader should be at start")
+    (is= (op/eod? reader) false "Should not be EOD")
+    (is= (doall (repeatedly (count data) #(op/read-float32-le reader))) data "Read four 32-bit floats")
+    (is= (op/tell reader) n "Reader should be at end")
+    (is= (op/eod? reader) true "Should be EOD")
+    (is= (op/read-float32-le reader) nil "Cannot read past end of the data")))
 
 (deftest reading-strings
-  (let [dv (create-dataview 128)
-        reader (op/create-reader dv)
-        data (str
+  (let [data (str
                "Is this all there was?\n"
                "What was all the fuss?\n"
-               "Why did I bother?\n")]
+               "Why did I bother?")
+        dv (create-dataview (count data))
+        reader (op/create-reader dv)]
 
     (set-binary-data! dv 0 (seq data))
 
     (is= (op/read-fixed-string reader 10 :ascii) "Is this al" "Single fixed string")
     (is= (op/read-fixed-string reader 13 :ascii) "l there was?\n" "Next single fixed string")
+    (is= (op/eod? reader) false "Should not be EOD")
     (is= (op/read-delimited-string reader #{"\n"} :ascii) "What was all the fuss?" "Following single delimited string")
-    (is= (op/read-delimited-string reader #{"\n"} :ascii) "Why did I bother?" "Next single delimited string")))
+    (is= (op/read-delimited-string reader #{"\n"} :ascii) "Why did I bother?" "Next single delimited string")
+    (is= (op/eod? reader) true "Should be EOD")
+    (is= (op/read-delimited-string reader #{"\n"} :ascii) nil "Cannot read past end of the data")))
 
 (comment ; causes PhantomJS to segfault
 (deftest triangle-binary-data
-  (let [data (list 0x20 0x1c 0x00 0x00
-                    0xbd 0x4c 0x7f 0xbf
-                    0x39 0x13 0x56 0xbd
-                    0x39 0x13 0x56 0x3d
-                    0x00 0x00 0x80 0x40
-                    0x00 0x00 0x00 0x00
-                    0x00 0x00 0x00 0x00
-                    0x3f 0xa6 0x7f 0x40
-                    0x05 0x13 0xd6 0x3d
-                    0x00 0x00 0x00 0x00
-                    0xba 0x3f 0x7e 0x40
-                    0x05 0x13 0xd6 0x3d
-                    0xf7 0xc7 0xd5 0xbe
-                    0x00 0x00)
-        dv (create-dataview 256)
+  (let [data (list
+               0x20 0x1c 0x00 0x00
+               0xbd 0x4c 0x7f 0xbf
+               0x39 0x13 0x56 0xbd
+               0x39 0x13 0x56 0x3d
+               0x00 0x00 0x80 0x40
+               0x00 0x00 0x00 0x00
+               0x00 0x00 0x00 0x00
+               0x3f 0xa6 0x7f 0x40
+               0x05 0x13 0xd6 0x3d
+               0x00 0x00 0x00 0x00
+               0xba 0x3f 0x7e 0x40
+               0x05 0x13 0xd6 0x3d
+               0xf7 0xc7 0xd5 0xbe
+               0x00 0x00)
+        dv (create-dataview (count data))
         reader (op/create-reader dv)]
 
     (set-binary-data! dv 0 data)
@@ -94,6 +107,3 @@
     (is= (op/read-uint16-le reader)  0.0 "Attributes")))
 
 )
-
-
-
