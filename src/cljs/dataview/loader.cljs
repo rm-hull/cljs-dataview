@@ -4,7 +4,7 @@
 
 (defn fetch-blob
   "Fetches the contents of a URL and returns a channel on which
-   the binary data (as DataView object)"
+   the binary data is parked (as DataView object)"
   [url]
   (let [xhr     (js/XMLHttpRequest.)
         chan    (chan)
