@@ -12,7 +12,7 @@ You will need [Leiningen](https://github.com/technomancy/leiningen) 2.3.4 or abo
 
 To build and install the library locally, run:
 
-    $ lein clean 
+    $ lein clean
     $ lein cljsbuild once
     $ lein install
 
@@ -30,7 +30,7 @@ This will only show a tally of failed tests.
 
 ### Including in your project
 
-There _will be_ an 'alpha-quality' version hosted at [Clojars](https://clojars.org/rm-hull/cljs-dataview).
+There is an 'alpha-quality' version hosted at [Clojars](https://clojars.org/rm-hull/cljs-dataview).
 For leiningen include a dependency:
 
 ```clojure
@@ -52,7 +52,7 @@ For maven-based projects, add the following to your `pom.xml`:
 ### Example: Reading binary STL files
 
 [Binary STL](https://en.wikipedia.org/wiki/STL_\(file_format\)#Binary_STL) files
-can be read in and processed with the following code sample (see 
+can be read in and processed with the following code sample (see
 [example/binary_stl.cljs](https://github.com/rm-hull/cljs-dataview/blob/master/example/binary_stl.cljs)
 for fully working example). Starting with some necessary pre-amble:
 
@@ -81,13 +81,13 @@ and _z_ floating-point components from a reader:
     :y (read-float32-le reader)
     :z (read-float32-le reader)))
 ```
-A _reader_ is a stateful implementation of an 
+A _reader_ is a stateful implementation of an
 [IReader](https://github.com/rm-hull/cljs-dataview/blob/master/src/cljs/dataview/ops.cljs#L47)
-protocol -- this has methods that traverse a javascript 
+protocol -- this has methods that traverse a javascript
 [DataView](https://developer.mozilla.org/en-US/docs/Web/API/DataView?redirectlocale=en-US&redirectslug=Web%2FJavaScript%2FTyped_arrays%2FDataView)
-sequentially as bytes, 16-bit & 32-bit integers, floating-point numbers and 
-fixed-width strings. The reified reader object may also implement 
-[IRandomAccess](https://github.com/rm-hull/cljs-dataview/blob/master/src/cljs/dataview/ops.cljs#L55) 
+sequentially as bytes, 16-bit & 32-bit integers, floating-point numbers and
+fixed-width strings. The reified reader object may also implement
+[IRandomAccess](https://github.com/rm-hull/cljs-dataview/blob/master/src/cljs/dataview/ops.cljs#L55)
 so that _seek_/_rewind_/_tell_ operations (similar to that used with Unix file
 descriptors) are also available.
 
@@ -105,7 +105,7 @@ act lazily.
     :points (doall (repeatedly 3 #(point-spec reader)))
     :attributes (read-uint16-le reader)))
 ```
-Finally, the overall STL spec header consists of 80 padded characters, 
+Finally, the overall STL spec header consists of 80 padded characters,
 followed by a triangle count: notice how this determines how many times the
 ```triangle-spec``` is subsequently invoked in the body:
 
@@ -117,11 +117,11 @@ followed by a triangle count: notice how this determines how many times the
                  (read-uint32-le reader) ; <== triangle-count
                  #(triangle-spec reader)))))
 ```
-So in order to fetch the binary data, ```fetch-blob``` below returns a 
-_core.async_ channel, from which a javascript DataView is produced. In order 
-to then _sort-of_ treat the DataView object as an input stream, it is wrapped in a 
+So in order to fetch the binary data, ```fetch-blob``` below returns a
+_core.async_ channel, from which a javascript DataView is produced. In order
+to then _sort-of_ treat the DataView object as an input stream, it is wrapped in a
 reader (by virtue of the ```create-reader``` function), which is then passed on
-to the ```stl-spec```: hence the binary data is progressively diced 
+to the ```stl-spec```: hence the binary data is progressively diced
 into a persistent map structure.
 
 ```clojure
@@ -135,23 +135,23 @@ into a persistent map structure.
 The resulting output (curtailed and slightly formatted):
 
 ```clojure
-{:header "Torus, created with https://github/rm-hull/wireframes [October 16 2013]         ", 
+{:header "Torus, created with https://github/rm-hull/wireframes [October 16 2013]         ",
  :triangles (
-   {:normal {:x -0.9972646832466125, :y -0.05226442590355873, :z 0.05226442590355873}, 
-    :points ({:x 4, :y 0, :z 0} 
-             {:x 3.9945218563079834, :y 0.10452846437692642, :z 0} 
-             {:x 3.972639560699463, :y 0.10452846437692642, :z -0.4175412356853485}), 
-    :attributes 0} 
    {:normal {:x -0.9972646832466125, :y -0.05226442590355873, :z 0.05226442590355873},
-    :points ({:x 4, :y 0, :z 0} 
-             {:x 3.972639560699463, :y 0.10452846437692642, :z -0.4175412356853485} 
-             {:x 3.9780876636505127, :y 0, :z -0.4181138575077057}), 
-    :attributes 0} 
-   {:normal {:x -0.9863678216934204, :y -0.1562253087759018, :z 0.05169334635138512}, 
-    :points ({:x 3.9945218563079834, :y 0.10452846437692642, :z 0} 
-             {:x 3.978147506713867, :y 0.2079116851091385, :z 0} 
-             {:x 3.956354856491089, :y 0.2079116851091385, :z -0.4158296585083008}), 
-    :attributes 0} 
+    :points ({:x 4, :y 0, :z 0}
+             {:x 3.9945218563079834, :y 0.10452846437692642, :z 0}
+             {:x 3.972639560699463, :y 0.10452846437692642, :z -0.4175412356853485}),
+    :attributes 0}
+   {:normal {:x -0.9972646832466125, :y -0.05226442590355873, :z 0.05226442590355873},
+    :points ({:x 4, :y 0, :z 0}
+             {:x 3.972639560699463, :y 0.10452846437692642, :z -0.4175412356853485}
+             {:x 3.9780876636505127, :y 0, :z -0.4181138575077057}),
+    :attributes 0}
+   {:normal {:x -0.9863678216934204, :y -0.1562253087759018, :z 0.05169334635138512},
+    :points ({:x 3.9945218563079834, :y 0.10452846437692642, :z 0}
+             {:x 3.978147506713867, :y 0.2079116851091385, :z 0}
+             {:x 3.956354856491089, :y 0.2079116851091385, :z -0.4158296585083008}),
+    :attributes 0}
 
 ...
 )}
@@ -164,7 +164,8 @@ The resulting output (curtailed and slightly formatted):
 * ~~Proper EOD handling/testing~~
 * [Gloss](https://github.com/ztellman/gloss)-style codecs
 * Integrate CORS handling with http://www.corsproxy.com/
-* Test framework, travis integration & unit tests
+* Test framework, ~~travis integration~~ & unit tests
+* ~~Implement ```fetch-image``` in loader namespace~~
 
 ## Known Bugs
 
