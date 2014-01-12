@@ -17,9 +17,9 @@
     (.send xhr)
     chan))
 
-(defn fetch-image 
+(defn fetch-image
   "Fetches an image from a URL and returns a channel on which the
-   the completed image is partked. Note: the image be hosted on 
+   the completed image is partked. Note: the image be hosted on
    the same domain unless a CORS-busting proxy is used."
   [url]
   (let [img     (js/Image.)
@@ -27,7 +27,7 @@
         handler (fn []
                   (go
                     (>! chan img)))]
-    (set! (.-onload img handler))
+    (set! (.-onload img) handler)
     (set! (.-crossOrigin img) "anonymous")
-    (set! (.src img) url)
+    (set! (.-src img) url)
     chan))
