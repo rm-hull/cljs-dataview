@@ -1,7 +1,7 @@
-(ns cljs.dataview.ops-test
+(ns dataview.ops-test
   (:use-macros [cljs-test.macros :only [deftest is= is]])
   (:require [cljs-test.core :as test]
-            [cljs.dataview.ops :as op]))
+            [dataview.ops :as op]))
 
 (defn create-dataview [size]
   (->

@@ -1,4 +1,4 @@
-(ns cljs.dataview.loader
+(ns dataview.loader
   (:require [cljs.core.async :refer [chan]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 

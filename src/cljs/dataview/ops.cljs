@@ -1,4 +1,4 @@
-(ns cljs.dataview.ops)
+(ns dataview.ops)
 
 ; TODO - turn into protocol & extend DataView
 

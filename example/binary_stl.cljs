@@ -1,7 +1,7 @@
 (ns binary-stl
-  (:require [cljs.dataview.loader :refer [fetch-blob]]
-            [cljs.dataview.ops :refer [create-reader read-fixed-string read-float32-le
-                                       read-uint16-le read-uint32-le]])
+  (:require [dataview.loader :refer [fetch-blob]]
+            [dataview.ops :refer [create-reader read-fixed-string read-float32-le
+                                  read-uint16-le read-uint32-le]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (set! *print-fn*
