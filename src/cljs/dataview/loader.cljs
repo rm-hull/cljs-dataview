@@ -1,5 +1,5 @@
 (ns dataview.loader
-  (:require [cljs.core.async :refer [chan]])
+  (:require [cljs.core.async :refer [>! chan close!]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (defn fetch-blob
@@ -10,7 +10,8 @@
         chan    (chan)
         handler (fn [event]
                   (go
-                    (>! chan (js/DataView. (.-response xhr)))))]
+                    (>! chan (js/DataView. (.-response xhr)))
+                    (close! chan)))]
     (. xhr (open "GET" url true))
     (set! (.-responseType xhr) "arraybuffer")
     (set! (.-onload xhr) handler)
@@ -26,7 +27,8 @@
         chan    (chan)
         handler (fn []
                   (go
-                    (>! chan img)))]
+                    (>! chan img)
+                    (close! chan)))]
     (set! (.-onload img) handler)
     (set! (.-crossOrigin img) "anonymous")
     (set! (.-src img) url)
@@ -40,7 +42,8 @@
         chan    (chan)
         handler (fn [event]
                   (go
-                    (>! chan (.-response xhr))))]
+                    (>! chan (.-response xhr))
+                    (close! chan)))]
     (. xhr (open "GET" url true))
     (set! (.-onload xhr) handler)
     (.send xhr)
