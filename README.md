@@ -166,6 +166,7 @@ The resulting output (curtailed and slightly formatted):
 * Integrate CORS handling with http://www.corsproxy.com/
 * Test framework, ~~travis integration~~ & unit tests
 * ~~Implement ```fetch-image``` in loader namespace~~
+* Support reading unicode strings in ```IReader```
 
 ## Known Bugs
 

@@ -31,3 +31,17 @@
     (set! (.-crossOrigin img) "anonymous")
     (set! (.-src img) url)
     chan))
+
+(defn fetch-text
+  "Fetches the contents of a URL and returns a channel on which
+   the text data is parked (as a string object)"
+  [url]
+  (let [xhr     (js/XMLHttpRequest.)
+        chan    (chan)
+        handler (fn [event]
+                  (go
+                    (>! chan (.-response xhr))))]
+    (. xhr (open "GET" url true))
+    (set! (.-onload xhr) handler)
+    (.send xhr)
+    chan))
