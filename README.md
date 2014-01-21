@@ -95,7 +95,7 @@ Secondly, a triangle is composed of a [surface normal](https://en.wikipedia.org/
 followed by 3 vertex co-ordinates and some attributes in the form of a 16-bit
 word -- the normal and the vertexes are constructed out of repeated application
 of the ```point-spec``` above. Note that since the ```point-spec``` has side-effects
-it is important to call _doall_ for force evaluation, otherwise _repeatedly_ will
+it is important to call _doall_ to force evaluation, otherwise _repeatedly_ will
 act lazily.
 
 ```clojure
