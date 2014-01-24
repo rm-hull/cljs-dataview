@@ -35,38 +35,34 @@
   [data-view]
   (.-byteLength data-view))
 
-(def get-string
+(defn get-string
   "Given a data-view, a byte offset, a length (and optionally an encoding -
-   note that only UTF-8 is currently supported), extracts a string from the
+   note that only ASCII is currently supported), extracts a string from the
    underlying byte buffer."
-  (let [utf? #{:utf8 :utf-8 :UTF8 :UTF-8}]
-    (fn [data-view byte-offset & {:keys [delimiters length encoding] :as opts}]
-      (if (and delimiters length)
-        (throw (js/Error. "Cannot support :length and :delimiters at the same time"))
-        (let [take-fn (fn [cs] (if length
-                                 (take length cs)
-                                 (take-while #(not (delimiters %)) cs)))
-              s (->>
-                  (range byte-offset (byte-length data-view))
-                  (map (comp char (partial get-uint8 data-view)))
-                  (take-fn)
-                  (apply str))]
-          (if (utf? (keyword encoding))
-            (-> s js/escape js/decodeURIComponent)
-            s))))))
+  [data-view byte-offset & {:keys [delimiters length] :as opts}]
+  (if (and delimiters length)
+    (throw (js/Error. "Cannot support :length and :delimiters at the same time"))
+    (let [take-fn (fn [cs] (if length
+                             (take length cs)
+                             (take-while #(not (delimiters %)) cs)))]
+      (->>
+        (range byte-offset (byte-length data-view))
+        (map (comp char (partial get-uint8 data-view)))
+        (take-fn)
+        (apply str)))))
 
 (defn can-read? [data-view offset bytes-to-read]
   (<= (+ offset bytes-to-read) (byte-length data-view)))
 
 (defprotocol IReader
-  (read-delimited-string [this delimiters encoding])
-  (read-fixed-string [this length encoding])
+  (read-utf8-string [this delimiters])
+  (read-fixed-string [this length])
   (read-uint8 [this])
   (read-uint16-le [this])
   (read-uint32-le [this])
   (read-float32-le [this])
-  (eod? [this])
-  )
+  (eod? [this]))
+
 
 (defprotocol IRandomAccess
   (tell [this])
@@ -90,21 +86,55 @@
       (rewind! [this]
         (seek! this 0)))))
 
+(defn- octet-nibbles
+  ([c] c)
+  ([c1 c2]
+    (bit-or
+      (bit-shift-left (bit-and c1 31) 6)
+      (bit-and c2 63)))
+  ([c1 c2 c3]
+    (bit-or
+      (bit-shift-left (bit-and c1 15) 12)
+      (octet-nibbles c2 c3))))
+
+(defn utf8-decode
+  "Reads upto 3 bytes from the reader in order to reconstruct
+   a single unicode character from it's UTF-8 representation.
+
+   Does not support surrogate pairs (4-byte encodings)."
+  [reader]
+  (let [c (read-uint8 reader)]
+    (.fromCharCode js/String
+      (cond
+        (< c 128)
+          (octet-nibbles c)
+
+        (and (>= c 192) (< c 224))
+          (octet-nibbles
+            c (read-uint8 reader))
+
+        :else
+          (octet-nibbles
+            c (read-uint8 reader) (read-uint8 reader))))))
+
 (defn create-reader [data-view]
   (let [seeker (create-seeker 0)]
     (reify
       IReader
-      (read-delimited-string [this delimiters encoding]
+      (read-utf8-string [this delimiters]
         (when-not (eod? this)
-          (let [offset (tell seeker)
-                data   (get-string data-view offset :delimiters delimiters :encoding encoding)]
-            (advance! seeker (inc (count data))) ; cater for single-character delimiters only
-            data)))
+          (loop [data nil
+                 next-char nil]
+            (if (or (eod? this) (delimiters next-char))
+              (str data next-char)
+              (recur
+                (str data next-char)
+                (utf8-decode this))))))
 
-      (read-fixed-string [this length encoding]
+      (read-fixed-string [this length]
         (when (can-read? data-view (tell seeker) length)
           (let [offset (advance! seeker length)]
-            (get-string data-view offset :length length :encoding encoding))))
+            (get-string data-view offset :length length))))
 
       (read-uint8 [this]
         (when (can-read? data-view (tell seeker) 1)

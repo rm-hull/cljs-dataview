@@ -82,12 +82,12 @@ and _z_ floating-point components from a reader:
     :z (read-float32-le reader)))
 ```
 A _reader_ is a stateful implementation of an
-[IReader](https://github.com/rm-hull/cljs-dataview/blob/master/src/cljs/dataview/ops.cljs#L47)
+[IReader](https://github.com/rm-hull/cljs-dataview/blob/master/src/cljs/dataview/ops.cljs#L57)
 protocol -- this has methods that traverse a javascript
 [DataView](https://developer.mozilla.org/en-US/docs/Web/API/DataView?redirectlocale=en-US&redirectslug=Web%2FJavaScript%2FTyped_arrays%2FDataView)
 sequentially as bytes, 16-bit & 32-bit integers, floating-point numbers and
 fixed-width strings. The reified reader object may also implement
-[IRandomAccess](https://github.com/rm-hull/cljs-dataview/blob/master/src/cljs/dataview/ops.cljs#L55)
+[IRandomAccess](https://github.com/rm-hull/cljs-dataview/blob/master/src/cljs/dataview/ops.cljs#L67)
 so that _seek_/_rewind_/_tell_ operations (similar to that used with Unix file
 descriptors) are also available.
 
@@ -112,7 +112,7 @@ followed by a triangle count: notice how this determines how many times the
 ```clojure
 (defn stl-spec [reader]
   (array-map
-    :header (read-fixed-string reader 80 :ascii)
+    :header (read-fixed-string reader 80)
     :triangles (doall (repeatedly
                  (read-uint32-le reader) ; <== triangle-count
                  #(triangle-spec reader)))))
@@ -166,7 +166,7 @@ The resulting output (curtailed and slightly formatted):
 * Integrate CORS handling with http://www.corsproxy.com/
 * Test framework, ~~travis integration~~ & unit tests
 * ~~Implement ```fetch-image``` in loader namespace~~
-* Support reading unicode strings in ```IReader```
+* ~~Support proper reading UTF-8 strings in ```IReader```~~
 
 ## Known Bugs
 
@@ -181,6 +181,8 @@ The resulting output (curtailed and slightly formatted):
 * http://stackoverflow.com/questions/327685/is-there-a-way-to-read-binary-data-in-javascript
 * https://github.com/tbuser/thingiview.js
 * https://github.com/MarcoPolo/servant
+* http://www.ietf.org/rfc/rfc3629.txt
+* http://phpjs.org/functions/utf8_encode/
 
 ## License
 

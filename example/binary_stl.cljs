@@ -30,7 +30,7 @@
 
 (defn stl-spec [reader]
   (array-map
-    :header (read-fixed-string reader 80 :ascii)
+    :header (read-fixed-string reader 80)
     :triangles (doall (repeatedly
                  (read-uint32-le reader)
                  #(triangle-spec reader)))))

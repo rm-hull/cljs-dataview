@@ -56,13 +56,13 @@
 
     (set-binary-data! dv 0 (seq data))
 
-    (is= (op/read-fixed-string reader 10 :ascii) "Is this al" "Single fixed string")
-    (is= (op/read-fixed-string reader 13 :ascii) "l there was?\n" "Next single fixed string")
+    (is= (op/read-fixed-string reader 10) "Is this al" "Single fixed string")
+    (is= (op/read-fixed-string reader 13) "l there was?\n" "Next single fixed string")
     (is= (op/eod? reader) false "Should not be EOD")
-    (is= (op/read-delimited-string reader #{"\n"} :ascii) "What was all the fuss?" "Following single delimited string")
-    (is= (op/read-delimited-string reader #{"\n"} :ascii) "Why did I bother?" "Next single delimited string")
+    (is= (op/read-utf8-string reader #{\newline}) "What was all the fuss?\n" "Following single delimited string")
+    (is= (op/read-utf8-string reader #{\newline}) "Why did I bother?" "Next single delimited string")
     (is= (op/eod? reader) true "Should be EOD")
-    (is= (op/read-delimited-string reader #{"\n"} :ascii) nil "Cannot read past end of the data")))
+    (is= (op/read-utf8-string reader #{\newline}) nil "Cannot read past end of the data")))
 
 (comment ; causes PhantomJS to segfault
 (deftest triangle-binary-data
@@ -107,3 +107,19 @@
     (is= (op/read-uint16-le reader)  0.0 "Attributes")))
 
 )
+
+(deftest read-utf8
+  (let [data (list
+               0xe2 0x94 0x8f
+               0xe2 0x94 0x81
+               0xe2 0x94 0x93
+               \newline
+               0xc3 0x83
+               0xc3 0x84)
+        dv (create-dataview (count data))
+        reader (op/create-reader dv)]
+
+    (set-binary-data! dv 0 data)
+
+    (is= (op/read-utf8-string reader #{\newline}) "┏━┓\n" "3-part box characters: ┏━┓")
+    (is= (op/read-utf8-string reader #{\newline}) "ÃÄ"     "2-part accents: ÃÄ")))
