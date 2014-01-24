@@ -86,7 +86,7 @@ A _reader_ is a stateful implementation of an
 protocol -- this has methods that traverse a javascript
 [DataView](https://developer.mozilla.org/en-US/docs/Web/API/DataView?redirectlocale=en-US&redirectslug=Web%2FJavaScript%2FTyped_arrays%2FDataView)
 sequentially as bytes, 16-bit & 32-bit integers, floating-point numbers and
-fixed-width strings. The reified reader object may also implement
+fixed-width/delimited strings. The reified reader object may also implement
 [IRandomAccess](https://github.com/rm-hull/cljs-dataview/blob/master/src/cljs/dataview/ops.cljs#L67)
 so that _seek_/_rewind_/_tell_ operations (similar to that used with Unix file
 descriptors) are also available.
@@ -95,7 +95,7 @@ Secondly, a triangle is composed of a [surface normal](https://en.wikipedia.org/
 followed by 3 vertex co-ordinates and some attributes in the form of a 16-bit
 word -- the normal and the vertexes are constructed out of repeated application
 of the ```point-spec``` above. Note that since the ```point-spec``` has side-effects
-it is important to call _doall_ for force evaluation, otherwise _repeatedly_ will
+it is important to call _doall_ to force evaluation, otherwise _repeatedly_ will
 act lazily.
 
 ```clojure
