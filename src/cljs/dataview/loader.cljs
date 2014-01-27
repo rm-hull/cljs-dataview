@@ -7,7 +7,7 @@
    the binary data is parked (as DataView object)"
   [url]
   (let [xhr     (js/XMLHttpRequest.)
-        chan    (chan)
+        chan    (chan 1)
         handler (fn [event]
                   (go
                     (>! chan (js/DataView. (.-response xhr)))
@@ -24,7 +24,7 @@
    the same domain unless a CORS-busting proxy is used."
   [url]
   (let [img     (js/Image.)
-        chan    (chan)
+        chan    (chan 1)
         handler (fn []
                   (go
                     (>! chan img)
@@ -39,7 +39,7 @@
    the text data is parked (as a string object)"
   [url]
   (let [xhr     (js/XMLHttpRequest.)
-        chan    (chan)
+        chan    (chan 1)
         handler (fn [event]
                   (go
                     (>! chan (.-response xhr))
