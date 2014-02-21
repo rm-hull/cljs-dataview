@@ -3,8 +3,9 @@
 ; ported directly from the Java version at wikipedia:
 ; http://en.wikipedia.org/wiki/Boyer_moore#Implementations
 
-(defn- char= [needle i j]
-  (= (.charCodeAt needle i) (.charCodeAt needle j)))
+(defn- char=
+  ([s i j] (char= s s i j))
+  ([s1 s2 i j] (= (.charCodeAt s1 i) (.charCodeAt s2 j))))
 
 (defn- prefix?
   "Is needle[p:end] a prefix of needle?"
@@ -24,10 +25,7 @@
          j (dec (count needle))
          len 0]
     (if (and (> i 0) (char= needle i j))
-      (recur
-        (dec i)
-        (dec j)
-        (inc len))
+      (recur (dec i) (dec j) (inc len))
       len)))
 
 (defn- make-char-table
@@ -35,12 +33,12 @@
   [needle]
   (let [len (count needle)]
     (loop [i 0
-           table (vec (repeat 256 len))]
+           table (transient (vec (repeat 256 len)))]
       (if-not (< i (dec len))
-        table
+        (persistent! table)
         (recur
           (inc i)
-          (assoc
+          (assoc!
             table
             (.charCodeAt needle i)
             (- len 1 i)))))))
@@ -49,14 +47,14 @@
   (let [len (count needle)]
     (loop [i (dec len)
            last-posn len
-           table (vec (repeat len 0))]
+           table (transient (vec (repeat len 0)))]
       (if-not (>= i 0)
-        table
+        (persistent! table)
         (let [last-posn (if (prefix? needle i) i last-posn)]
           (recur
             (dec i)
             last-posn
-            (assoc
+            (assoc!
               table
               (- len 1 i)
               (+ last-posn (- i) len -1))))))))
@@ -66,13 +64,13 @@
   [needle]
   (let [len (count needle)]
     (loop [i 0
-           table (calc-prefixes needle)]
+           table (transient (calc-prefixes needle))]
       (if-not (<  i (dec len))
-        table
+        (persistent! table)
         (let [slen (suffix-length needle i)]
           (recur
             (inc i)
-            (assoc table slen (+ len -1 (- i) slen))))))))
+            (assoc! table slen (+ len -1 (- i) slen))))))))
 
 (defn index-of
   "Returns the index with the string of the first occurrence of the
@@ -97,5 +95,5 @@
             (cond
               (>= i (count haystack)) nil
               (zero? j) i
-              (= (.charCodeAt needle j) (.charCodeAt haystack i)) (recur (dec i) (dec j))
+              (char= haystack needle i j) (recur (dec i) (dec j))
               :else (recur (calc-offset i j) m1))))))))
