@@ -167,6 +167,7 @@ The resulting output (curtailed and slightly formatted):
 * Test framework, ~~travis integration~~ & unit tests
 * ~~Implement ```fetch-image``` in loader namespace~~
 * ~~Support proper reading UTF-8 strings in ```IReader```~~
+* Boyer-Moore searching in IRandomAccess with a ```find!``` method
 
 ## Known Bugs
 
