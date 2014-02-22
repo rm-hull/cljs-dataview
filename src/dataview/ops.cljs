@@ -2,6 +2,22 @@
 
 ; TODO - turn into protocol & extend DataView
 
+(defprotocol IReader
+  (read-utf8-string [this delimiters])
+  (read-fixed-string [this length])
+  (read-uint8 [this])
+  (read-uint16-le [this])
+  (read-uint32-le [this])
+  (read-float32-le [this])
+  (eod? [this]))
+
+
+(defprotocol IRandomAccess
+  (tell [this])
+  (advance! [this delta])   ; cf. get-and-add
+  (seek! [this new-offset])
+  (rewind! [this]))
+
 (defn get-uint8
   "Gets the value of the 8-bit unsigned byte at the specified byte offset
    from the start of the data view. There is no alignment constraint;
@@ -84,22 +100,6 @@
 
 (defn can-read? [data-view offset bytes-to-read]
   (<= (+ offset bytes-to-read) (byte-length data-view)))
-
-(defprotocol IReader
-  (read-utf8-string [this delimiters])
-  (read-fixed-string [this length])
-  (read-uint8 [this])
-  (read-uint16-le [this])
-  (read-uint32-le [this])
-  (read-float32-le [this])
-  (eod? [this]))
-
-
-(defprotocol IRandomAccess
-  (tell [this])
-  (advance! [this delta])   ; cf. get-and-add
-  (seek! [this new-offset])
-  (rewind! [this]))
 
 (defn- create-seeker [initial-offset]
   (let [index (atom initial-offset)]
