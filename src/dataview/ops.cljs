@@ -51,6 +51,37 @@
         (take-fn)
         (apply str)))))
 
+(defn- octet-nibbles
+  ([c] c)
+  ([c1 c2]
+    (bit-or
+      (bit-shift-left (bit-and c1 31) 6)
+      (bit-and c2 63)))
+  ([c1 c2 c3]
+    (bit-or
+      (bit-shift-left (bit-and c1 15) 12)
+      (octet-nibbles c2 c3))))
+
+(defn utf8-decode
+  "Reads upto 3 bytes from the reader in order to reconstruct
+   a single unicode character from it's UTF-8 representation.
+
+   Does not support surrogate pairs (4-byte encodings)."
+  [reader]
+  (let [c (read-uint8 reader)]
+    (.fromCharCode js/String
+      (cond
+        (< c 128)
+          (octet-nibbles c)
+
+        (and (>= c 192) (< c 224))
+          (octet-nibbles
+            c (read-uint8 reader))
+
+        :else
+          (octet-nibbles
+            c (read-uint8 reader) (read-uint8 reader))))))
+
 (defn can-read? [data-view offset bytes-to-read]
   (<= (+ offset bytes-to-read) (byte-length data-view)))
 
@@ -85,37 +116,6 @@
 
       (rewind! [this]
         (seek! this 0)))))
-
-(defn- octet-nibbles
-  ([c] c)
-  ([c1 c2]
-    (bit-or
-      (bit-shift-left (bit-and c1 31) 6)
-      (bit-and c2 63)))
-  ([c1 c2 c3]
-    (bit-or
-      (bit-shift-left (bit-and c1 15) 12)
-      (octet-nibbles c2 c3))))
-
-(defn utf8-decode
-  "Reads upto 3 bytes from the reader in order to reconstruct
-   a single unicode character from it's UTF-8 representation.
-
-   Does not support surrogate pairs (4-byte encodings)."
-  [reader]
-  (let [c (read-uint8 reader)]
-    (.fromCharCode js/String
-      (cond
-        (< c 128)
-          (octet-nibbles c)
-
-        (and (>= c 192) (< c 224))
-          (octet-nibbles
-            c (read-uint8 reader))
-
-        :else
-          (octet-nibbles
-            c (read-uint8 reader) (read-uint8 reader))))))
 
 (defn create-reader [data-view]
   (let [seeker (create-seeker 0)]
