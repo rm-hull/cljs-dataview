@@ -11,7 +11,7 @@
 (defn- prefix?
   "Is needle[p:end] a prefix of needle?"
   [needle p]
-  (let [len (count needle)]
+  (let [len (byte-length needle)]
     (loop [i p
            j 0]
       (cond
