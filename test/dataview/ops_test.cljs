@@ -1,44 +1,25 @@
 (ns dataview.ops-test
-  (:use-macros [cljs-test.macros :only [deftest is= is]])
-  (:require [cljs-test.core :as test]
-            [dataview.ops :as op]))
-
-(defn create-dataview [size]
-  (->
-    (js/ArrayBuffer. size)
-    (js/DataView.)))
-
-
-(defn set-binary-data! [data-view offset data]
-  (let [offsets (iterate inc offset)
-        pairs (partition 2 (interleave offsets data))]
-    (doseq [[i n] pairs]
-      (.setUint8 data-view i (if (string? n) (.charCodeAt n 0) n)))))
-
-(defn set-float-data! [data-view offset data]
-  (let [offsets (iterate (partial + 4) offset)
-        pairs (partition 2 (interleave offsets data))]
-    (doseq [[i n] pairs]
-      (. data-view (setFloat32  i n true)))))
-
-(defn tee [tee-fn x]
-  (tee-fn x)
-  x)
+  (:use-macros
+    [cljs-test.macros :only [deftest is= is is-thrown?]])
+  (:require
+    [cljs-test.core :as test]
+    [dataview.test-helpers :refer [create-dataview set-float-data! set-binary-data!]]
+    [dataview.ops :as op]))
 
 (deftest reading-floats
   (let [n 16
-        dv (create-dataview n)
-        reader (op/create-reader dv)
+        dataview (create-dataview n)
+        reader (op/create-reader dataview)
         data [4.0 17.5 16.5 43.0]]
 
-    (set-float-data! dv 0 data)
+    (set-float-data! dataview 0 data)
 
-    (is= (op/byte-length dv) n "Byte-length check")
-    (is= (op/can-read? dv 0 4) true "Can-read? first 4 bytes")
-    (is= (op/can-read? dv 4 4) true "Can-read? 4 bytes, offset 4")
-    (is= (op/can-read? dv 8 4) true "Can-read? 4 bytes, offset 8")
-    (is= (op/can-read? dv 12 4) true "Can-read? 4 bytes, offset 12")
-    (is= (op/can-read? dv 16 4) false "Can-read? 4 bytes, offset 16")
+    (is= (op/byte-length dataview) n "Byte-length check")
+    (is= (op/can-read? dataview 0 4) true "Can-read? first 4 bytes")
+    (is= (op/can-read? dataview 4 4) true "Can-read? 4 bytes, offset 4")
+    (is= (op/can-read? dataview 8 4) true "Can-read? 4 bytes, offset 8")
+    (is= (op/can-read? dataview 12 4) true "Can-read? 4 bytes, offset 12")
+    (is= (op/can-read? dataview 16 4) false "Can-read? 4 bytes, offset 16")
     (is= (op/tell reader) 0 "Reader should be at start")
     (is= (op/eod? reader) false "Should not be EOD")
     (is= (doall (repeatedly (count data) #(op/read-float32-le reader))) data "Read four 32-bit floats")
@@ -51,10 +32,10 @@
                "Is this all there was?\n"
                "What was all the fuss?\n"
                "Why did I bother?")
-        dv (create-dataview (count data))
-        reader (op/create-reader dv)]
+        dataview (create-dataview (count data))
+        reader (op/create-reader dataview)]
 
-    (set-binary-data! dv 0 (seq data))
+    (set-binary-data! dataview 0 (seq data))
 
     (is= (op/read-fixed-string reader 10) "Is this al" "Single fixed string")
     (is= (op/read-fixed-string reader 13) "l there was?\n" "Next single fixed string")
@@ -81,10 +62,10 @@
                0x05 0x13 0xd6 0x3d
                0xf7 0xc7 0xd5 0xbe
                0x00 0x00)
-        dv (create-dataview (count data))
-        reader (op/create-reader dv)]
+        dataview (create-dataview (count data))
+        reader (op/create-reader dataview)]
 
-    (set-binary-data! dv 0 data)
+    (set-binary-data! dataview 0 data)
 
     (is= (op/read-uint32-le reader) 7200 "Num triangles")
 
@@ -116,10 +97,30 @@
                \newline
                0xc3 0x83
                0xc3 0x84)
-        dv (create-dataview (count data))
-        reader (op/create-reader dv)]
+        dataview (create-dataview (count data))
+        reader (op/create-reader dataview)]
 
-    (set-binary-data! dv 0 data)
+    (set-binary-data! dataview 0 data)
 
     (is= (op/read-utf8-string reader #{\newline}) "┏━┓\n" "3-part box characters: ┏━┓")
     (is= (op/read-utf8-string reader #{\newline}) "ÃÄ"     "2-part accents: ÃÄ")))
+
+(deftest create-reader-from-string
+  (let [reader (op/create-reader (str
+                      "She came from Greece. She had a thirst for knowledge.\n"
+                      "She studied sculpture at Saint Martin's College.\n"))]
+
+    (is= (op/read-utf8-string reader #{\space}) "She " "Check reading a word from a string reader")
+    (is= (op/read-byte reader) 99 "Check reading a byte from a string reader")
+    (is= (op/tell reader) 5 "Verify position before anticipated failure")
+    (is-thrown? (op/read-uint16-le reader) "Check reading a uint16 from a string reader throws an exception")
+
+    (is= (op/tell reader) 5 "Verify position after anticipated failure")
+
+    (op/rewind! reader)
+
+    (is= (op/read-utf8-string reader #{\newline})
+         "She came from Greece. She had a thirst for knowledge.\n"
+         "Check line after rewind")
+
+    ))

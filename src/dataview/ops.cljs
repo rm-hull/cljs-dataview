@@ -1,16 +1,13 @@
 (ns dataview.ops)
 
-; TODO - turn into protocol & extend DataView
-
 (defprotocol IReader
   (read-utf8-string [this delimiters])
   (read-fixed-string [this length])
-  (read-uint8 [this])
+  (read-byte [this])
   (read-uint16-le [this])
   (read-uint32-le [this])
   (read-float32-le [this])
   (eod? [this]))
-
 
 (defprotocol IRandomAccess
   (tell [this])
@@ -18,52 +15,50 @@
   (seek! [this new-offset])
   (rewind! [this]))
 
-(defn get-uint8
-  "Gets the value of the 8-bit unsigned byte at the specified byte offset
-   from the start of the data view. There is no alignment constraint;
-   multi-byte values may be fetched from any offset."
-  [data-view byte-offset]
-  (. data-view (getUint8 byte-offset)))
+(defprotocol IByteIndexed
+  (byte-length [this])
+  (get-byte [this offset]))
 
-(defn get-uint16-le
-  "Gets the value of the 16-bit little-endian unsigned short integer at the
-   specified byte offset from the start of the data view. There is no
-   alignment constraint; multi-byte values may be fetched from any offset."
-  [data-view byte-offset]
-  (. data-view (getUint16 byte-offset true)))
+(defprotocol ILittleEndian
+  (get-uint16-le [this offset])
+  (get-uint32-le [this offset])
+  (get-float32-le [this offset]))
 
-(defn get-uint32-le
-  "Gets the value of the 32-bit little-endian unsigned integer at the
-   specified byte offset from the start of the data view. There is no
-   alignment constraint; multi-byte values may be fetched from any offset."
-  [data-view byte-offset]
-  (. data-view (getUint32 byte-offset true)))
+(extend-type js/DataView
+  IByteIndexed
+  (byte-length [data-view]
+    (.-byteLength data-view))
+  (get-byte [data-view offset]
+    (.getUint8 data-view offset))
 
-(defn get-float32-le
-  "Gets the value of the 32-bit little-endian IEEE floating-point number
-   at the specified byte offset from the start of the data view. There is no
-   alignment constraint; multi-byte values may be fetched from any offset."
-  [data-view byte-offset]
-  (. data-view (getFloat32 byte-offset true)))
+  ILittleEndian
+  (get-uint16-le [data-view offset]
+    (.getUint16 data-view offset true))
+  (get-uint32-le [data-view offset]
+    (.getUint32  data-view offset true))
+  (get-float32-le [data-view offset]
+    (.getFloat32  data-view offset true)))
 
-(defn byte-length
-  "The size of the data view, expressed in bytes"
-  [data-view]
-  (.-byteLength data-view))
+(extend-type string
+  IByteIndexed
+  (byte-length [string]
+    (.-length string))
+  (get-byte [string offset]
+    (.charCodeAt string offset)))
 
 (defn get-string
   "Given a data-view, a byte offset, a length (and optionally an encoding -
    note that only ASCII is currently supported), extracts a string from the
    underlying byte buffer."
-  [data-view byte-offset & {:keys [delimiters length] :as opts}]
+  [^IByteIndexed obj byte-offset & {:keys [delimiters length] :as opts}]
   (if (and delimiters length)
     (throw (js/Error. "Cannot support :length and :delimiters at the same time"))
     (let [take-fn (fn [cs] (if length
                              (take length cs)
                              (take-while #(not (delimiters %)) cs)))]
       (->>
-        (range byte-offset (byte-length data-view))
-        (map (comp char (partial get-uint8 data-view)))
+        (range byte-offset (byte-length obj))
+        (map (comp char (partial get-byte obj)))
         (take-fn)
         (apply str)))))
 
@@ -84,7 +79,7 @@
 
    Does not support surrogate pairs (4-byte encodings)."
   [reader]
-  (let [c (read-uint8 reader)]
+  (let [c (read-byte reader)]
     (.fromCharCode js/String
       (cond
         (< c 128)
@@ -92,11 +87,11 @@
 
         (and (>= c 192) (< c 224))
           (octet-nibbles
-            c (read-uint8 reader))
+            c (read-byte reader))
 
         :else
           (octet-nibbles
-            c (read-uint8 reader) (read-uint8 reader))))))
+            c (read-byte reader) (read-byte reader))))))
 
 (defn can-read? [data-view offset bytes-to-read]
   (<= (+ offset bytes-to-read) (byte-length data-view)))
@@ -117,8 +112,16 @@
       (rewind! [this]
         (seek! this 0)))))
 
-(defn create-reader [data-view]
-  (let [seeker (create-seeker 0)]
+(defn create-reader [^IByteIndexed obj]
+  (let [seeker (create-seeker 0)
+        apply-offset (fn [bytes-to-read fn]
+                       (when (can-read? obj (tell seeker) bytes-to-read)
+                         (let [offset (advance! seeker bytes-to-read)]
+                           (try
+                             (fn offset)
+                             (catch js/Error e
+                               (seek! seeker offset)
+                               (throw e))))))]
     (reify
       IReader
       (read-utf8-string [this delimiters]
@@ -132,32 +135,24 @@
                 (utf8-decode this))))))
 
       (read-fixed-string [this length]
-        (when (can-read? data-view (tell seeker) length)
-          (let [offset (advance! seeker length)]
-            (get-string data-view offset :length length))))
+        (apply-offset
+          length
+          #(get-string obj % :length length)))
 
-      (read-uint8 [this]
-        (when (can-read? data-view (tell seeker) 1)
-          (let [offset (advance! this 1)]
-            (get-uint8 data-view offset))))
+      (read-byte [this]
+        (apply-offset 1 #(get-byte obj %)))
 
       (read-uint16-le [this]
-        (when (can-read? data-view (tell seeker) 2)
-          (let [offset (advance! this 2)]
-            (get-uint16-le data-view offset))))
+        (apply-offset 2 #(get-uint16-le obj %)))
 
       (read-uint32-le [this]
-        (when (can-read? data-view (tell seeker) 4)
-          (let [offset (advance! this 4)]
-            (get-uint32-le data-view offset))))
+        (apply-offset 4 #(get-uint32-le obj %)))
 
       (read-float32-le [this]
-        (when (can-read? data-view (tell seeker) 4)
-          (let [offset (advance! this 4)]
-            (get-float32-le data-view offset))))
+        (apply-offset 4 #(get-float32-le obj %)))
 
       (eod? [this]
-        (>= (tell seeker) (byte-length data-view)))
+        (>= (tell seeker) (byte-length obj)))
 
       IRandomAccess
       (tell [this]
