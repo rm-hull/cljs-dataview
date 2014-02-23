@@ -1,11 +1,12 @@
-(ns dataview.boyer-moore)
+(ns dataview.boyer-moore
+  (:require [dataview.ops :refer [get-byte byte-length]]))
 
 ; ported directly from the Java version at wikipedia:
 ; http://en.wikipedia.org/wiki/Boyer_moore#Implementations
 
 (defn- char=
   ([s i j] (char= s s i j))
-  ([s1 s2 i j] (= (.charCodeAt s1 i) (.charCodeAt s2 j))))
+  ([s1 s2 i j] (= (get-byte s1 i) (get-byte s2 j))))
 
 (defn- prefix?
   "Is needle[p:end] a prefix of needle?"
@@ -22,7 +23,7 @@
   "Returns the maximum length of the substring ends at p and is a suffix"
   [needle p]
   (loop [i p
-         j (dec (count needle))
+         j (dec (byte-length needle))
          len 0]
     (if (and (> i 0) (char= needle i j))
       (recur (dec i) (dec j) (inc len))
@@ -31,7 +32,7 @@
 (defn- make-char-table
   "Makes the jump table based on the mismatched character information"
   [needle]
-  (let [len (count needle)]
+  (let [len (byte-length needle)]
     (loop [i 0
            table (transient (vec (repeat 256 len)))]
       (if-not (< i (dec len))
@@ -44,7 +45,7 @@
             (- len 1 i)))))))
 
 (defn- calc-prefixes [needle]
-  (let [len (count needle)]
+  (let [len (byte-length needle)]
     (loop [i (dec len)
            last-posn len
            table (transient (vec (repeat len 0)))]
@@ -62,7 +63,7 @@
 (defn- make-offset-table
   "Makes the jump table based on the scan offset which mismatch occurs"
   [needle]
-  (let [len (count needle)]
+  (let [len (byte-length needle)]
     (loop [i 0
            table (transient (calc-prefixes needle))]
       (if-not (<  i (dec len))
@@ -80,7 +81,7 @@
    needle   - the target string to search"
   ([haystack needle] (index-of haystack needle 0))
   ([haystack needle offset]
-    (let [len (count needle)
+    (let [len (byte-length needle)
           m1 (dec len)]
       (if (zero? len)
         offset
@@ -89,11 +90,11 @@
               calc-offset (fn [i j] (+ offset i
                                        (Math/max
                                          (get offset-table (- m1 j))
-                                         (get char-table (.charCodeAt haystack i)))))]
+                                         (get char-table (get-byte haystack i)))))]
           (loop [i (+ offset m1)
                  j m1]
             (cond
-              (>= i (count haystack)) nil
+              (>= i (byte-length haystack)) nil
               (zero? j) i
               (char= haystack needle i j) (recur (dec i) (dec j))
               :else (recur (calc-offset i j) m1))))))))
