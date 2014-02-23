@@ -45,7 +45,6 @@
     (is= (op/eod? reader) true "Should be EOD")
     (is= (op/read-utf8-string reader #{\newline}) nil "Cannot read past end of the data")))
 
-(comment ; causes PhantomJS to segfault
 (deftest triangle-binary-data
   (let [data (list
                0x20 0x1c 0x00 0x00
@@ -87,7 +86,6 @@
 
     (is= (op/read-uint16-le reader)  0.0 "Attributes")))
 
-)
 
 (deftest read-utf8
   (let [data (list
