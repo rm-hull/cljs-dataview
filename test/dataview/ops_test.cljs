@@ -4,6 +4,7 @@
   (:require
     [cljs-test.core :as test]
     [dataview.test-helpers :refer [create-dataview set-float-data! set-binary-data!]]
+    [dataview.protocols :as proto]
     [dataview.ops :as op]))
 
 (deftest reading-floats
@@ -14,18 +15,18 @@
 
     (set-float-data! dataview 0 data)
 
-    (is= (op/byte-length dataview) n "Byte-length check")
+    (is= (proto/byte-length dataview) n "Byte-length check")
     (is= (op/can-read? dataview 0 4) true "Can-read? first 4 bytes")
     (is= (op/can-read? dataview 4 4) true "Can-read? 4 bytes, offset 4")
     (is= (op/can-read? dataview 8 4) true "Can-read? 4 bytes, offset 8")
     (is= (op/can-read? dataview 12 4) true "Can-read? 4 bytes, offset 12")
     (is= (op/can-read? dataview 16 4) false "Can-read? 4 bytes, offset 16")
-    (is= (op/tell reader) 0 "Reader should be at start")
-    (is= (op/eod? reader) false "Should not be EOD")
-    (is= (doall (repeatedly (count data) #(op/read-float32-le reader))) data "Read four 32-bit floats")
-    (is= (op/tell reader) n "Reader should be at end")
-    (is= (op/eod? reader) true "Should be EOD")
-    (is= (op/read-float32-le reader) nil "Cannot read past end of the data")))
+    (is= (proto/tell reader) 0 "Reader should be at start")
+    (is= (proto/eod? reader) false "Should not be EOD")
+    (is= (doall (repeatedly (count data) #(proto/read-float32-le reader))) data "Read four 32-bit floats")
+    (is= (proto/tell reader) n "Reader should be at end")
+    (is= (proto/eod? reader) true "Should be EOD")
+    (is= (proto/read-float32-le reader) nil "Cannot read past end of the data")))
 
 (deftest reading-strings
   (let [data (str
@@ -37,13 +38,20 @@
 
     (set-binary-data! dataview 0 (seq data))
 
-    (is= (op/read-fixed-string reader 10) "Is this al" "Single fixed string")
-    (is= (op/read-fixed-string reader 13) "l there was?\n" "Next single fixed string")
-    (is= (op/eod? reader) false "Should not be EOD")
-    (is= (op/read-utf8-string reader #{\newline}) "What was all the fuss?\n" "Following single delimited string")
-    (is= (op/read-utf8-string reader #{\newline}) "Why did I bother?" "Next single delimited string")
-    (is= (op/eod? reader) true "Should be EOD")
-    (is= (op/read-utf8-string reader #{\newline}) nil "Cannot read past end of the data")))
+    (is= (proto/read-fixed-string reader 10) "Is this al" "Single fixed string")
+    (is= (proto/read-fixed-string reader 13) "l there was?\n" "Next single fixed string")
+    (is= (proto/eod? reader) false "Should not be EOD")
+    (is= (proto/read-utf8-string reader #{\newline}) "What was all the fuss?\n" "Following single delimited string")
+    (is= (proto/read-utf8-string reader #{\newline}) "Why did I bother?" "Next single delimited string")
+    (is= (proto/eod? reader) true "Should be EOD")
+    (is= (proto/read-utf8-string reader #{\newline}) nil "Cannot read past end of the data")
+    (is= (proto/rewind! reader) 0 "Rewind successfully")
+    (is= (proto/find! reader "sausage") nil "Fails to find (as expected)")
+    (is= (proto/tell reader) 0 "Seeker still at start")
+    (is= (proto/find! reader "fuss") 40 "Finds fuss")
+    (is= (proto/tell reader) 40 "Seeker pos matches find")
+    (is= (proto/find! reader "sausage") nil "Fails to find again (as expected)")
+    (is= (proto/tell reader) 40 "Seeker pos unchanged")))
 
 (deftest triangle-binary-data
   (let [data (list
@@ -66,25 +74,25 @@
 
     (set-binary-data! dataview 0 data)
 
-    (is= (op/read-uint32-le reader) 7200 "Num triangles")
+    (is= (proto/read-uint32-le reader) 7200 "Num triangles")
 
-    (is= (op/read-float32-le reader) -0.9972646832466125 "Normal X")
-    (is= (op/read-float32-le reader) -0.05226442590355873 "Normal Y")
-    (is= (op/read-float32-le reader)  0.05226442590355873 "Normal Z")
+    (is= (proto/read-float32-le reader) -0.9972646832466125 "Normal X")
+    (is= (proto/read-float32-le reader) -0.05226442590355873 "Normal Y")
+    (is= (proto/read-float32-le reader)  0.05226442590355873 "Normal Z")
 
-    (is= (op/read-float32-le reader)  4.0 "Point 1 X")
-    (is= (op/read-float32-le reader)  0.0 "Point 1 Y")
-    (is= (op/read-float32-le reader)  0.0 "Point 1 Z")
+    (is= (proto/read-float32-le reader)  4.0 "Point 1 X")
+    (is= (proto/read-float32-le reader)  0.0 "Point 1 Y")
+    (is= (proto/read-float32-le reader)  0.0 "Point 1 Z")
 
-    (is= (op/read-float32-le reader)  3.9945218563079834 "Point 2 X")
-    (is= (op/read-float32-le reader)  0.10452846437692642 "Point 2 Y")
-    (is= (op/read-float32-le reader)  0.0 "Point 2 Z")
+    (is= (proto/read-float32-le reader)  3.9945218563079834 "Point 2 X")
+    (is= (proto/read-float32-le reader)  0.10452846437692642 "Point 2 Y")
+    (is= (proto/read-float32-le reader)  0.0 "Point 2 Z")
 
-    (is= (op/read-float32-le reader)  3.972639560699463 "Point 3 X")
-    (is= (op/read-float32-le reader)  0.10452846437692642 "Point 3 Y")
-    (is= (op/read-float32-le reader) -0.4175412356853485 "Point 3 Z")
+    (is= (proto/read-float32-le reader)  3.972639560699463 "Point 3 X")
+    (is= (proto/read-float32-le reader)  0.10452846437692642 "Point 3 Y")
+    (is= (proto/read-float32-le reader) -0.4175412356853485 "Point 3 Z")
 
-    (is= (op/read-uint16-le reader)  0.0 "Attributes")))
+    (is= (proto/read-uint16-le reader)  0.0 "Attributes")))
 
 
 (deftest read-utf8
@@ -100,25 +108,23 @@
 
     (set-binary-data! dataview 0 data)
 
-    (is= (op/read-utf8-string reader #{\newline}) "┏━┓\n" "3-part box characters: ┏━┓")
-    (is= (op/read-utf8-string reader #{\newline}) "ÃÄ"     "2-part accents: ÃÄ")))
+    (is= (proto/read-utf8-string reader #{\newline}) "┏━┓\n" "3-part box characters: ┏━┓")
+    (is= (proto/read-utf8-string reader #{\newline}) "ÃÄ"     "2-part accents: ÃÄ")))
 
 (deftest create-reader-from-string
   (let [reader (op/create-reader (str
                       "She came from Greece. She had a thirst for knowledge.\n"
                       "She studied sculpture at Saint Martin's College.\n"))]
 
-    (is= (op/read-utf8-string reader #{\space}) "She " "Check reading a word from a string reader")
-    (is= (op/read-byte reader) 99 "Check reading a byte from a string reader")
-    (is= (op/tell reader) 5 "Verify position before anticipated failure")
-    (is-thrown? (op/read-uint16-le reader) "Check reading a uint16 from a string reader throws an exception")
+    (is= (proto/read-utf8-string reader #{\space}) "She " "Check reading a word from a string reader")
+    (is= (proto/read-byte reader) 99 "Check reading a byte from a string reader")
+    (is= (proto/tell reader) 5 "Verify position before anticipated failure")
+    (is-thrown? (proto/read-uint16-le reader) "Check reading a uint16 from a string reader throws an exception")
 
-    (is= (op/tell reader) 5 "Verify position after anticipated failure")
+    (is= (proto/tell reader) 5 "Verify position after anticipated failure")
 
-    (op/rewind! reader)
+    (proto/rewind! reader)
 
-    (is= (op/read-utf8-string reader #{\newline})
+    (is= (proto/read-utf8-string reader #{\newline})
          "She came from Greece. She had a thirst for knowledge.\n"
-         "Check line after rewind")
-
-    ))
+         "Check line after rewind")))

@@ -1,64 +1,21 @@
-(ns dataview.ops)
-
-(defprotocol IReader
-  (read-utf8-string [this delimiters])
-  (read-fixed-string [this length])
-  (read-byte [this])
-  (read-uint16-le [this])
-  (read-uint32-le [this])
-  (read-float32-le [this])
-  (eod? [this]))
-
-(defprotocol IRandomAccess
-  (tell [this])
-  (advance! [this delta])   ; cf. get-and-add
-  (seek! [this new-offset])
-  (rewind! [this]))
-
-(defprotocol IByteIndexed
-  (byte-length [this])
-  (get-byte [this offset]))
-
-(defprotocol ILittleEndian
-  (get-uint16-le [this offset])
-  (get-uint32-le [this offset])
-  (get-float32-le [this offset]))
-
-(extend-type js/DataView
-  IByteIndexed
-  (byte-length [data-view]
-    (.-byteLength data-view))
-  (get-byte [data-view offset]
-    (.getUint8 data-view offset))
-
-  ILittleEndian
-  (get-uint16-le [data-view offset]
-    (.getUint16 data-view offset true))
-  (get-uint32-le [data-view offset]
-    (.getUint32  data-view offset true))
-  (get-float32-le [data-view offset]
-    (.getFloat32  data-view offset true)))
-
-(extend-type string
-  IByteIndexed
-  (byte-length [string]
-    (.-length string))
-  (get-byte [string offset]
-    (.charCodeAt string offset)))
+(ns dataview.ops
+  (:require
+    [dataview.protocols :as proto]
+    [dataview.boyer-moore :refer [index-of]]))
 
 (defn get-string
   "Given a data-view, a byte offset, a length (and optionally an encoding -
    note that only ASCII is currently supported), extracts a string from the
    underlying byte buffer."
-  [^IByteIndexed obj byte-offset & {:keys [delimiters length] :as opts}]
+  [^proto/IByteIndexed obj byte-offset & {:keys [delimiters length] :as opts}]
   (if (and delimiters length)
     (throw (js/Error. "Cannot support :length and :delimiters at the same time"))
     (let [take-fn (fn [cs] (if length
                              (take length cs)
                              (take-while #(not (delimiters %)) cs)))]
       (->>
-        (range byte-offset (byte-length obj))
-        (map (comp char (partial get-byte obj)))
+        (range byte-offset (proto/byte-length obj))
+        (map (comp char (partial proto/get-byte obj)))
         (take-fn)
         (apply str)))))
 
@@ -79,7 +36,7 @@
 
    Does not support surrogate pairs (4-byte encodings)."
   [reader]
-  (let [c (read-byte reader)]
+  (let [c (proto/read-byte reader)]
     (.fromCharCode js/String
       (cond
         (< c 128)
@@ -87,19 +44,19 @@
 
         (and (>= c 192) (< c 224))
           (octet-nibbles
-            c (read-byte reader))
+            c (proto/read-byte reader))
 
         :else
           (octet-nibbles
-            c (read-byte reader) (read-byte reader))))))
+            c (proto/read-byte reader) (proto/read-byte reader))))))
 
 (defn can-read? [data-view offset bytes-to-read]
-  (<= (+ offset bytes-to-read) (byte-length data-view)))
+  (<= (+ offset bytes-to-read) (proto/byte-length data-view)))
 
-(defn- create-seeker [initial-offset]
+(defn- create-seeker [initial-offset obj]
   (let [index (atom initial-offset)]
     (reify
-      IRandomAccess
+      proto/IRandomAccess
       (tell [this]
         (deref index))
 
@@ -110,25 +67,29 @@
         (reset! index new-offset))
 
       (rewind! [this]
-        (seek! this 0)))))
+        (proto/seek! this 0))
 
-(defn create-reader [^IByteIndexed obj]
-  (let [seeker (create-seeker 0)
+      (find! [this term]
+        (when-let [new-offset (index-of obj term)]
+          (proto/seek! this new-offset))))))
+
+(defn create-reader [^proto/IByteIndexed obj]
+  (let [seeker (create-seeker 0 obj)
         apply-offset (fn [bytes-to-read fn]
-                       (when (can-read? obj (tell seeker) bytes-to-read)
-                         (let [offset (advance! seeker bytes-to-read)]
+                       (when (can-read? obj (proto/tell seeker) bytes-to-read)
+                         (let [offset (proto/advance! seeker bytes-to-read)]
                            (try
                              (fn offset)
                              (catch js/Error e
-                               (seek! seeker offset)
+                               (proto/seek! seeker offset)
                                (throw e))))))]
     (reify
-      IReader
+      proto/IReader
       (read-utf8-string [this delimiters]
-        (when-not (eod? this)
+        (when-not (proto/eod? this)
           (loop [data nil
                  next-char nil]
-            (if (or (eod? this) (delimiters next-char))
+            (if (or (proto/eod? this) (delimiters next-char))
               (str data next-char)
               (recur
                 (str data next-char)
@@ -140,29 +101,32 @@
           #(get-string obj % :length length)))
 
       (read-byte [this]
-        (apply-offset 1 #(get-byte obj %)))
+        (apply-offset 1 #(proto/get-byte obj %)))
 
       (read-uint16-le [this]
-        (apply-offset 2 #(get-uint16-le obj %)))
+        (apply-offset 2 #(proto/get-uint16-le obj %)))
 
       (read-uint32-le [this]
-        (apply-offset 4 #(get-uint32-le obj %)))
+        (apply-offset 4 #(proto/get-uint32-le obj %)))
 
       (read-float32-le [this]
-        (apply-offset 4 #(get-float32-le obj %)))
+        (apply-offset 4 #(proto/get-float32-le obj %)))
 
       (eod? [this]
-        (>= (tell seeker) (byte-length obj)))
+        (>= (proto/tell seeker) (proto/byte-length obj)))
 
-      IRandomAccess
+      proto/IRandomAccess
       (tell [this]
-        (tell seeker))
+        (proto/tell seeker))
 
       (advance! [this delta]
-        (advance! seeker delta))
+        (proto/advance! seeker delta))
 
       (seek! [this new-offset]
-        (seek! seeker new-offset))
+        (proto/seek! seeker new-offset))
 
       (rewind! [this]
-        (rewind! seeker)))))
+        (proto/rewind! seeker))
+
+      (find! [this term]
+        (proto/find! seeker term)))))

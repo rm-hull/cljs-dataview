@@ -1,5 +1,6 @@
 (ns dataview.boyer-moore
-  (:require [dataview.ops :refer [get-byte byte-length]]))
+  (:require
+    [dataview.protocols :refer [get-byte byte-length]]))
 
 ; ported directly from the Java version at wikipedia:
 ; http://en.wikipedia.org/wiki/Boyer_moore#Implementations
