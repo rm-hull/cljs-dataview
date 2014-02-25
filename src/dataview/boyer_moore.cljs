@@ -96,6 +96,6 @@
                  j m1]
             (cond
               (>= i (byte-length haystack)) nil
-              (zero? j) i
               (char= haystack needle i j) (recur (dec i) (dec j))
+              (neg? j) (inc i)
               :else (recur (calc-offset i j) m1))))))))

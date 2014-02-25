@@ -13,7 +13,10 @@
   (is= (index-of "Hello world" "Hello") 0 "Match at zero")
   (is= (index-of "Hello world" "world") 6 "Match at pos 6")
   (is= (index-of "Hello world" "o wo") 4 "Match at pos 4")
-  (is= (index-of "Hello world" "not") nil "No match"))
+  (is= (index-of "Hello world" "not") nil "No match")
+  (is= (index-of "Hello world" "not") nil "No match")
+  (is= (index-of "svertices vertices" "vertices") 1 "Prefix match")
+  (is= (index-of "FFS :svertices :vertices" ":vertices") 15 "Another prefix match"))
 
 (deftest boyer-moore->dataview
   (let [data (str
