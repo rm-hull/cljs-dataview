@@ -128,3 +128,15 @@
     (is= (proto/read-utf8-string reader #{\newline})
          "She came from Greece. She had a thirst for knowledge.\n"
          "Check line after rewind")))
+
+(deftest advance-and-find
+  (let [reader (op/create-reader (str
+                      "She came from Greece. She had a thirst for knowledge.\n"
+                      "She studied sculpture at Saint Martin's College.\n"))]
+
+    (is= (proto/find! reader "She") 0 "Finds first instance")
+    (is= (proto/read-utf8-string reader #{\.}) "She came from Greece." "Read first sentence")
+    (is= (proto/find! reader "She") 22 "Finds second instance")
+    (is= (proto/read-utf8-string reader #{\.}) "She had a thirst for knowledge." "Read second sentence")
+    (is= (proto/find! reader "She") 54 "Finds third instance")
+    (is= (proto/read-utf8-string reader #{\.}) "She studied sculpture at Saint Martin's College." "Read third sentence")))

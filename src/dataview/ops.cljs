@@ -70,7 +70,7 @@
         (proto/seek! this 0))
 
       (find! [this term]
-        (when-let [new-offset (index-of obj term)]
+        (when-let [new-offset (index-of obj term (deref index))]
           (proto/seek! this new-offset))))))
 
 (defn create-reader [^proto/IByteIndexed obj]
