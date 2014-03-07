@@ -88,7 +88,7 @@
         offset
         (let [char-table (make-char-table needle)
               offset-table (make-offset-table needle)
-              calc-offset (fn [i j] (+ offset i
+              calc-offset (fn [i j] (+ i
                                        (Math/max
                                          (get offset-table (- m1 j))
                                          (get char-table (get-byte haystack i)))))]

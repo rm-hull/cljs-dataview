@@ -12,6 +12,7 @@
   (is= (index-of "Hello world" "" 3) 3 "Empty offset")
   (is= (index-of "Hello world" "Hello") 0 "Match at zero")
   (is= (index-of "Hello world" "world") 6 "Match at pos 6")
+  (is= (index-of "Hello world" "world" 4) 6 "Match at pos 6 with initial offset")
   (is= (index-of "Hello world" "o wo") 4 "Match at pos 4")
   (is= (index-of "Hello world" "not") nil "No match")
   (is= (index-of "Hello world" "not") nil "No match")
