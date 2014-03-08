@@ -112,6 +112,9 @@
       (read-float32-le [this]
         (apply-offset 4 #(proto/get-float32-le obj %)))
 
+      (view [this length]
+        (create-reader (proto/slice obj (proto/tell seeker) length)))
+
       (eod? [this]
         (>= (proto/tell seeker) (proto/byte-length obj)))
 

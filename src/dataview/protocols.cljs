@@ -7,6 +7,7 @@
   (read-uint16-le [this])
   (read-uint32-le [this])
   (read-float32-le [this])
+  (view [this length])
   (eod? [this]))
 
 (defprotocol IRandomAccess
@@ -18,7 +19,8 @@
 
 (defprotocol IByteIndexed
   (byte-length [this])
-  (get-byte [this offset]))
+  (get-byte [this offset])
+  (slice [this offset length]))
 
 (defprotocol ILittleEndian
   (get-uint16-le [this offset])
@@ -31,6 +33,8 @@
     (.-byteLength data-view))
   (get-byte [data-view offset]
     (.getUint8 data-view offset))
+  (slice [data-view offset length]
+    (js/DataView. (.-buffer data-view) offset length))
 
   ILittleEndian
   (get-uint16-le [data-view offset]
@@ -45,4 +49,6 @@
   (byte-length [string]
     (.-length string))
   (get-byte [string offset]
-    (.charCodeAt string offset)))
+    (.charCodeAt string offset))
+  (slice [string offset length]
+    (.substr string offset length)))

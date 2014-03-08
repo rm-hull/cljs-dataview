@@ -140,3 +140,19 @@
     (is= (proto/read-utf8-string reader #{\.}) "She had a thirst for knowledge." "Read second sentence")
     (is= (proto/find! reader "She") 54 "Finds third instance")
     (is= (proto/read-utf8-string reader #{\.}) "She studied sculpture at Saint Martin's College." "Read third sentence")))
+
+(deftest slice-check
+  (let [data (str
+               "If I had a hammer\n"
+               "I'd hammer in the morning\n"
+               "I'd hammer in the evening\n"
+               "All over this land\n")
+        dataview (create-dataview (count data))
+        reader (op/create-reader dataview)]
+
+    (set-binary-data! dataview 0 (seq data))
+    (is= (proto/read-utf8-string reader #{\newline}) "If I had a hammer\n" "Consume a string")
+    (is= (proto/read-utf8-string (proto/view reader 22) #{\newline}) "I'd hammer in the morn" "Dataview slice OK")
+    (is= (proto/slice "Fred is dead" 1 3) "red" "String slice OK")))
+
+
