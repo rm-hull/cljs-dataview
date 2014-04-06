@@ -8,11 +8,11 @@
   :scm {:url "git@github.com:rm-hull/cljs-dataview"}
   :min-lein-version "2.3.4"
   :global-vars {*warn-on-reflection* true}
-  :plugins [[lein-cljsbuild "1.0.2"]]
-  :dependencies [[org.clojure/clojure "1.5.1"]
-                 [org.clojure/clojurescript "0.0-2173"]
-                 [org.clojure/core.async "0.1.267.0-0d7780-alpha"]
-                 [rm-hull/cljs-test "0.0.7"]]
+  :plugins [[lein-cljsbuild "1.0.3"]]
+  :dependencies [[org.clojure/clojure "1.6.0"]
+                 [org.clojure/clojurescript "0.0-2202"]
+                 [org.clojure/core.async "0.1.278.0-76b25b-alpha"]
+                 [rm-hull/cljs-test "0.0.8-SNAPSHOT"]]
   :cljsbuild {
     :test-commands {"phantomjs" ["phantomjs" "target/unit-test.js"]}
     :builds {
